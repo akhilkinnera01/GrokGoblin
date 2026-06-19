@@ -44,7 +44,7 @@ End with: "Scope confirmed. Ready to move to `/goblinplan` with this scope."
 
 ## State
 
-Writes to `.gg/state/deep-interview-state.json`:
+Writes to `.grokgoblin/state/deep-interview-state.json`:
 ```json
 {
   "active": true,

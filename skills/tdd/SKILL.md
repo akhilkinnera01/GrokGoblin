@@ -90,7 +90,7 @@ Increment 2: "returns user data for known user"
 
 ## State
 
-`.gg/state/tdd-state.json`:
+`.grokgoblin/state/tdd-state.json`:
 ```json
 {
   "active": true,

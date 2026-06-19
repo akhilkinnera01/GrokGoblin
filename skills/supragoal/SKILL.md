@@ -26,7 +26,7 @@ Goals:
   G002: {second goal} — criteria: {how to verify}
   G003: ...
 
-Ledger: .gg/supragoal/ledger.jsonl
+Ledger: .grokgoblin/supragoal/ledger.jsonl
 ```
 
 ### Per-Goal Execution
@@ -49,13 +49,13 @@ For each goal Gxxx:
 [SUPRAGOAL COMPLETE]
 Goals completed: {n}/{total}
 Total evidence: {summary}
-Ledger: .gg/supragoal/ledger.jsonl
+Ledger: .grokgoblin/supragoal/ledger.jsonl
 ```
 
 ## Files
 
 ```
-.gg/supragoal/
+.grokgoblin/supragoal/
 ├── brief.md          — Original task brief
 ├── goals.json        — Structured goal list with criteria
 ├── ledger.jsonl      — Checkpoint evidence per goal
@@ -71,7 +71,7 @@ Ledger: .gg/supragoal/ledger.jsonl
 
 ## State
 
-`.gg/state/supragoal-state.json`:
+`.grokgoblin/state/supragoal-state.json`:
 ```json
 {
   "active": true,
@@ -79,6 +79,6 @@ Ledger: .gg/supragoal/ledger.jsonl
   "totalGoals": 5,
   "completedGoals": 1,
   "phase": "execution",
-  "ledgerPath": ".gg/supragoal/ledger.jsonl"
+  "ledgerPath": ".grokgoblin/supragoal/ledger.jsonl"
 }
 ```

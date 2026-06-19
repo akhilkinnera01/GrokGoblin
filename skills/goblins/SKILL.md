@@ -64,12 +64,12 @@ When workers complete:
 Each worker should:
 - Stay within its assigned scope
 - Use `/ralph` discipline for its slice
-- Write output evidence to `.gg/state/goblins/<name>/worker-N-evidence.md`
+- Write output evidence to `.grokgoblin/state/goblins/<name>/worker-N-evidence.md`
 - Signal completion in the tmux pane output
 
 ## Goblins State
 
-`.gg/state/goblins/<goblins-name>/state.json`:
+`.grokgoblin/state/goblins/<goblins-name>/state.json`:
 ```json
 {
   "teamName": "gg-goblins-abc123",

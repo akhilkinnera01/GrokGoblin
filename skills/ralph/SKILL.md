@@ -43,6 +43,15 @@ Current state: Starting fresh
 Phase: execution
 ```
 
+### Completion gate (mandatory — verification is not optional)
+
+Ralph may ONLY declare the task complete after it has actually verified the work:
+- RUN the project's build, tests, and linters and confirm they PASS (show the command + result).
+- If there is no test/build, state explicitly and concretely how completion was verified.
+- If verification fails or can't be run, the task is NOT done — keep iterating or escalate as blocked.
+
+Never claim "done" on the basis of having written code alone. Evidence of a passing check is required to close.
+
 ### Closing Ralph
 
 When complete:
@@ -69,7 +78,7 @@ Extend with: "ralph extend 20" to add 20 more iterations.
 
 ## State
 
-Updates `.gg/state/ralph-state.json`:
+Updates `.grokgoblin/state/ralph-state.json`:
 ```json
 {
   "active": true,

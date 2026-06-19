@@ -56,7 +56,7 @@ Artifacts: {files changed, tests added, etc.}
 
 ## State
 
-`.gg/state/cruise-state.json`:
+`.grokgoblin/state/cruise-state.json`:
 ```json
 {
   "active": true,

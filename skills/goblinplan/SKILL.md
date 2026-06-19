@@ -24,6 +24,16 @@ Before proposing anything:
 - Understand the current system behavior
 - Identify the integration points affected by this change
 - Note what already exists that can be reused
+- Recall prior decisions from memory (`memory_search`) so the plan stays consistent with past choices
+
+### Phase 2.5 — Real-time grounding (proactive, not reactive)
+
+Grok has live web/X knowledge — USE IT while planning instead of waiting to be asked. Before locking the architecture, proactively `web_search` for:
+- the **current** stable versions / APIs of the libraries and frameworks involved (don't plan against stale APIs)
+- recent best practices, known pitfalls, security advisories, or deprecations for the approach you're considering
+- for anything fast-moving (model APIs, SDKs, tooling), prefer **today's** sources over training memory
+
+Fold findings into the decisions below and cite them. If a library/API changed recently, the plan must reflect current reality.
 
 ### Phase 3 — Architecture Decision
 
@@ -69,16 +79,16 @@ Plan ready. Review above and confirm with:
 
 ## Artifacts
 
-Writes plan to `.gg/plans/goblinplan-<timestamp>.md`
+Writes plan to `.grokgoblin/plans/goblinplan-<timestamp>.md`
 
 ## State
 
-Updates `.gg/state/goblinplan-state.json`:
+Updates `.grokgoblin/state/goblinplan-state.json`:
 ```json
 {
   "active": true,
   "phase": "investigation|planning|approved",
-  "planPath": ".gg/plans/goblinplan-1234.md",
+  "planPath": ".grokgoblin/plans/goblinplan-1234.md",
   "approvedAt": null
 }
 ```
