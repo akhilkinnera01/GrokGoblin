@@ -10,7 +10,7 @@ export type GrokMode = "code" | "plan" | "ask";
 export type GgMode =
   | "ralph"
   | "cruise"
-  | "grokplan"
+  | "goblinplan"
   | "deep-interview"
   | "supragoal"
   | "research"

@@ -2,8 +2,8 @@ import type { AgentDefinition } from "../types/index.js";
 import { DEFAULT_FRONTIER_MODEL, DEFAULT_FAST_MODEL } from "../utils/paths.js";
 
 export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
-  analyst: {
-    name: "analyst",
+  sniffer: {
+    name: "sniffer",
     description:
       "Deep investigation, evidence gathering, and structured analysis. Use when you need thorough understanding before acting.",
     reasoningEffort: "high",
@@ -14,8 +14,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     tools: "read-only",
     category: "domain",
   },
-  planner: {
-    name: "planner",
+  schemer: {
+    name: "schemer",
     description:
       "Architecture planning, tradeoff analysis, and implementation strategy. Produces planning artifacts, does not implement.",
     reasoningEffort: "high",
@@ -26,8 +26,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     tools: "analysis",
     category: "build",
   },
-  architect: {
-    name: "architect",
+  tinker: {
+    name: "tinker",
     description:
       "System design, API contract definition, and structural decisions. Think before touching code.",
     reasoningEffort: "high",
@@ -38,8 +38,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     tools: "analysis",
     category: "build",
   },
-  executor: {
-    name: "executor",
+  basher: {
+    name: "basher",
     description:
       "Clean, precise implementation within approved plan scope. No exploration, no scope creep.",
     reasoningEffort: "medium",
@@ -50,8 +50,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     tools: "execution",
     category: "build",
   },
-  debugger: {
-    name: "debugger",
+  squasher: {
+    name: "squasher",
     description:
       "Root cause analysis and systematic bug diagnosis. Minimize surface area, fix the actual cause.",
     reasoningEffort: "high",
@@ -62,8 +62,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     tools: "execution",
     category: "build",
   },
-  reviewer: {
-    name: "reviewer",
+  nitpick: {
+    name: "nitpick",
     description:
       "Critical evaluation of code changes: correctness, security, simplicity, and edge cases.",
     reasoningEffort: "high",
@@ -74,8 +74,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     tools: "read-only",
     category: "review",
   },
-  "security-reviewer": {
-    name: "security-reviewer",
+  warden: {
+    name: "warden",
     description:
       "Security-focused code review: OWASP top 10, injection, auth flaws, data exposure.",
     reasoningEffort: "high",
@@ -86,8 +86,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     tools: "read-only",
     category: "review",
   },
-  researcher: {
-    name: "researcher",
+  forager: {
+    name: "forager",
     description:
       "Bounded evidence gathering from codebase and external sources. Synthesizes findings into structured output.",
     reasoningEffort: "medium",
@@ -98,8 +98,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     tools: "read-only",
     category: "domain",
   },
-  verifier: {
-    name: "verifier",
+  prover: {
+    name: "prover",
     description:
       "Runs tests, validates behavior, and confirms implementation meets plan criteria.",
     reasoningEffort: "medium",
@@ -110,8 +110,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     tools: "execution",
     category: "review",
   },
-  "team-worker": {
-    name: "team-worker",
+  grunt: {
+    name: "grunt",
     description:
       "Parallel execution worker. Focuses on a bounded slice of work and reports upstream.",
     reasoningEffort: "medium",

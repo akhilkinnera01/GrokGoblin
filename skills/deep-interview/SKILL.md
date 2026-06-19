@@ -40,7 +40,7 @@ RISKS: [top 1-2 risks with mitigations]
 
 ### Phase 3 — Handoff
 
-End with: "Scope confirmed. Ready to move to `/grokplan` with this scope."
+End with: "Scope confirmed. Ready to move to `/goblinplan` with this scope."
 
 ## State
 

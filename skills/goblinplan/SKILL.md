@@ -1,15 +1,15 @@
-# /grokplan
+# /goblinplan
 
 Architecture planning and implementation strategy synthesis.
 
 ## When to use
 
-Use `/grokplan` after clarification (or when scope is already clear) to:
+Use `/goblinplan` after clarification (or when scope is already clear) to:
 - Turn a confirmed scope into a concrete implementation plan
 - Evaluate architectural tradeoffs before touching code
 - Produce a planning artifact that can gate execution
 
-**Rule**: `/grokplan` produces a plan. It does NOT implement. Code changes require an explicit execution phase.
+**Rule**: `/goblinplan` produces a plan. It does NOT implement. Code changes require an explicit execution phase.
 
 ## Protocol
 
@@ -69,16 +69,16 @@ Plan ready. Review above and confirm with:
 
 ## Artifacts
 
-Writes plan to `.gg/plans/grokplan-<timestamp>.md`
+Writes plan to `.gg/plans/goblinplan-<timestamp>.md`
 
 ## State
 
-Updates `.gg/state/grokplan-state.json`:
+Updates `.gg/state/goblinplan-state.json`:
 ```json
 {
   "active": true,
   "phase": "investigation|planning|approved",
-  "planPath": ".gg/plans/grokplan-1234.md",
+  "planPath": ".gg/plans/goblinplan-1234.md",
   "approvedAt": null
 }
 ```

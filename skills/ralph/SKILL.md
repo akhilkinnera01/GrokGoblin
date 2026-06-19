@@ -12,7 +12,7 @@ Think of Ralph as the "don't give up" mode.
 
 ## When to use
 
-- After a plan is approved (from `/grokplan`)
+- After a plan is approved (from `/goblinplan`)
 - When you need to push through a complex multi-step implementation
 - When you want verification loops built in
 - When the task might span multiple turns and needs continuation logic

@@ -9,7 +9,7 @@ before making recommendations. It's pre-planning work — not implementation.
 
 Use it when:
 - You need to understand an unfamiliar codebase area before proposing changes
-- You want to compare approaches with evidence before a `/grokplan`
+- You want to compare approaches with evidence before a `/goblinplan`
 - You need to find all usage sites of a pattern before changing it
 
 ## Protocol
@@ -72,5 +72,5 @@ What I still don't know: {what couldn't be determined}
 
 ## Output
 
-Research findings can be passed directly to `/grokplan`:
-"Take the above research and create a plan using `/grokplan`."
+Research findings can be passed directly to `/goblinplan`:
+"Take the above research and create a plan using `/goblinplan`."

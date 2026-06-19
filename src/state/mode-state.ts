@@ -91,7 +91,7 @@ export function getActiveModes(cwd: string, sessionId?: string): GgMode[] {
   const modes: GgMode[] = [
     "ralph",
     "cruise",
-    "grokplan",
+    "goblinplan",
     "deep-interview",
     "supragoal",
     "research",

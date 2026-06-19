@@ -119,7 +119,7 @@ async function runTeamNative(
   const grokHome = resolveGrokHome();
   const leaderModel = (flags["model"] as string) ?? DEFAULT_FRONTIER_MODEL;
 
-  header("GrokGoblin Team (native subagents)");
+  header("GrokGoblin Goblins (native subagents)");
   print(`${dim("task:")}    ${task}`);
   print(`${dim("workers:")} up to ${workerCount} parallel subagents`);
   print(`${dim("roles:")}   ${roleNames.join(", ")}`);
@@ -209,7 +209,7 @@ async function runTeamLaunch(
   const fastModel = (flags["spark"] as string) ?? DEFAULT_FAST_MODEL;
   const useWorktrees = Boolean(flags["worktrees"] ?? isGitRepo(cwd));
 
-  header(`GrokGoblin Team: ${workerCount} workers`);
+  header(`GrokGoblin Goblins: ${workerCount} workers`);
   print(dim(`Task: ${task}`));
   print(dim(`Session: ${teamName}`));
   print("");
@@ -251,7 +251,7 @@ async function runTeamLaunch(
   const leaderTmuxSession = `${teamName}-leader`;
   const workerArgs = [
     "-p",
-    `/team-worker ${task}`,
+    `You are a grunt worker goblin. Complete this task end-to-end, then verify your work: ${task}`,
     "-m",
     fastModel,
     "--output-format",

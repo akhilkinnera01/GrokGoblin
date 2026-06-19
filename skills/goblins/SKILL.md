@@ -1,32 +1,32 @@
-# /team
+# /goblins
 
 Coordinated parallel execution across multiple Grok sessions.
 
 ## Purpose
 
-Team mode splits a large task across multiple parallel Grok worker sessions 
+Goblins mode splits a large task across multiple parallel Grok worker sessions 
 in separate tmux panes. Each worker owns a bounded slice of work and reports
 evidence back to the leader.
 
-Use team when:
+Use goblins when:
 - The work has clearly independent parallel tracks
 - Each track is large enough to justify its own session (>20 min of work)
 - The integration points between tracks are well-defined
 
-Don't use team for small tasks — the coordination overhead isn't worth it.
+Don't use goblins for small tasks — the coordination overhead isn't worth it.
 
 ## Launch from shell
 
 ```bash
-gg team 3:executor "fix the failing tests in the auth module"
-gg team 2:reviewer "review the PR and security-audit the changes"
-gg team status <team-name>
-gg team shutdown <team-name>
+gg goblins 3:executor "fix the failing tests in the auth module"
+gg goblins 2:reviewer "review the PR and security-audit the changes"
+gg goblins status <goblins-name>
+gg goblins shutdown <goblins-name>
 ```
 
 ## In-session protocol
 
-When invoked as `/team` inside a grok session, the leader:
+When invoked as `/goblins` inside a grok session, the leader:
 
 ### Step 1 — Task Analysis
 
@@ -48,7 +48,7 @@ Integration: {how outputs are combined}
 
 ### Step 3 — Monitoring
 
-Check worker progress with `gg team status <name>`.
+Check worker progress with `gg goblins status <name>`.
 Workers run independently — monitor via tmux pane output.
 
 ### Step 4 — Integration
@@ -64,15 +64,15 @@ When workers complete:
 Each worker should:
 - Stay within its assigned scope
 - Use `/ralph` discipline for its slice
-- Write output evidence to `.gg/state/team/<name>/worker-N-evidence.md`
+- Write output evidence to `.gg/state/goblins/<name>/worker-N-evidence.md`
 - Signal completion in the tmux pane output
 
-## Team State
+## Goblins State
 
-`.gg/state/team/<team-name>/state.json`:
+`.gg/state/goblins/<goblins-name>/state.json`:
 ```json
 {
-  "teamName": "gg-team-abc123",
+  "teamName": "gg-goblins-abc123",
   "task": "...",
   "workerCount": 3,
   "workers": [

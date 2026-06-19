@@ -58,7 +58,7 @@ You are operating with **grokgoblin (GrokGoblin)** v${GG_VERSION} installed — 
 ## Core Workflow
 
 1. **Clarify** with \`/deep-interview\` — when scope, requirements, or non-goals are unclear
-2. **Plan** with \`/grokplan\` — turn clarified scope into an architecture + implementation plan
+2. **Plan** with \`/goblinplan\` — turn clarified scope into an architecture + implementation plan
 3. **Execute** with \`/ralph\` or \`/supragoal\` — persistent completion with verification
 
 This sequence is the GrokGoblin way. Don't skip clarification when the task is ambiguous.
@@ -70,7 +70,7 @@ This sequence is the GrokGoblin way. Don't skip clarification when the task is a
 | Skill | Use for |
 |-------|---------|
 | \`/deep-interview\` | Structured requirements clarification |
-| \`/grokplan\` | Planning + tradeoff synthesis |
+| \`/goblinplan\` | Planning + tradeoff synthesis |
 | \`/ralph\` | Persistent completion loop with reflection |
 | \`/supragoal\` | Durable multi-goal execution with checkpoints |
 | \`/cruise\` | Full autonomous workflow (clarify→plan→execute) |

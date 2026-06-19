@@ -9,20 +9,20 @@ type TransitionRule = {
 const TRANSITION_RULES: TransitionRule[] = [
   {
     from: "deep-interview",
-    to: ["grokplan", "research"],
+    to: ["goblinplan", "research"],
     requires: "scope-confirmed",
   },
-  { from: "grokplan", to: ["cruise", "ralph", "supragoal", "team"] },
+  { from: "goblinplan", to: ["cruise", "ralph", "supragoal", "team"] },
   { from: "supragoal", to: ["ralph", "team"] },
   { from: "ralph", to: ["supragoal", "team"] },
-  { from: "research", to: ["grokplan", "ralph"] },
+  { from: "research", to: ["goblinplan", "ralph"] },
   { from: "cruise", to: ["ralph", "supragoal"] },
   { from: "team", to: ["supragoal", "ralph"] },
 ];
 
 const EXCLUSIVE_PAIRS: Array<[GgMode, GgMode]> = [
   ["ralph", "cruise"],
-  ["grokplan", "cruise"],
+  ["goblinplan", "cruise"],
   ["deep-interview", "supragoal"],
   ["deep-interview", "team"],
 ];

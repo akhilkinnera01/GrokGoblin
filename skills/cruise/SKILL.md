@@ -8,7 +8,7 @@ Cruise runs the complete GrokGoblin workflow in sequence without manual handoffs
 Use it when you trust the scope and want hands-off execution.
 
 For complex or high-risk work, prefer explicit handoffs:
-`/deep-interview` → `/grokplan` → `/ralph`
+`/deep-interview` → `/goblinplan` → `/ralph`
 
 ## Protocol
 
@@ -23,7 +23,7 @@ Questions to ask:
 
 ### Phase 2 — Fast Plan
 
-Produce a concise plan (not a full grokplan deep-dive):
+Produce a concise plan (not a full goblinplan deep-dive):
 - What you'll do (3-5 bullets)
 - Key architecture decisions
 - Verification approach

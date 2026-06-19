@@ -33,7 +33,7 @@ import { writeFileSync, readFileSync } from "fs";
 
 const BUILTIN_SKILLS = [
   "deep-interview",
-  "grokplan",
+  "goblinplan",
   "ralph",
   "supragoal",
   "cruise",
@@ -41,7 +41,7 @@ const BUILTIN_SKILLS = [
   "research",
   "build-fix",
   "tdd",
-  "team",
+  "goblins",
 ];
 
 function copyDirRecursive(src: string, dest: string): void {
@@ -160,7 +160,7 @@ export async function runSetup(
   print("");
   print("In a Grok session, start with:");
   print(`  ${dim("/deep-interview")} — clarify scope`);
-  print(`  ${dim("/grokplan")} — create a plan`);
+  print(`  ${dim("/goblinplan")} — create a plan`);
   print(`  ${dim("/ralph")} — persistent completion loop`);
   print("");
   print(dim("Inspired by oh-my-codex by Yeachan Heo (https://github.com/Yeachan-Heo/oh-my-codex)"));

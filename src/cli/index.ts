@@ -22,6 +22,7 @@ type CliCommand =
   | "hook"
   | "version"
   | "help"
+  | "goblins"
   | "team"
   | "ralph"
   | "state"
@@ -110,6 +111,7 @@ function resolveCliInvocation(argv: string[]): ResolvedCliInvocation {
     "hook",
     "version",
     "help",
+    "goblins",
     "team",
     "ralph",
     "state",
@@ -180,7 +182,7 @@ function printHelp(): void {
   print("  gg cruise <goal>        Autonomous headless loop until goal complete");
   print("  gg supragoal <goal>        Launch durable multi-goal workflow");
   print("  gg ralph <task>            Persistent completion loop");
-  print("  gg team [N] <task>          Orchestrate N parallel grok subagents (--tmux for panes)");
+  print("  gg goblins [N] <task>       Orchestrate N parallel grok subagents (--tmux for panes)");
   print("");
   print(bold("Hooks:"));
   print("  gg hooks list              List registered hooks");
@@ -199,7 +201,7 @@ function printHelp(): void {
   print("");
   print(bold("In-session skills (invoke inside grok with /<name>):"));
   print("  /deep-interview             Structured requirements clarification");
-  print("  /grokplan                   Planning + tradeoff synthesis");
+  print("  /goblinplan                   Planning + tradeoff synthesis");
   print("  /ralph                      Persistent completion loop");
   print("  /supragoal                  Durable multi-goal execution");
   print("  /cruise                  Full autonomous workflow");
@@ -207,7 +209,7 @@ function printHelp(): void {
   print("  /research                   Bounded evidence gathering");
   print("  /build-fix                  Bug diagnosis and fix");
   print("  /tdd                        Test-driven development");
-  print("  /team                       Parallel execution");
+  print("  /goblins                    Parallel execution");
   print("");
   print(bold("Environment variables:"));
   print("  XAI_API_KEY                 xAI API key (optional; or use `grok login`)");
@@ -497,6 +499,7 @@ export async function main(argv: string[]): Promise<void> {
       break;
     }
 
+    case "goblins":
     case "team": {
       const { runTeam } = await import("./team.js");
       await runTeam(cwd, args, flags);

@@ -66,7 +66,7 @@ gg config model fast                   # set the default grok model
 | `gg cruise <goal>` | **Autonomous loop** — re-invokes grok until it reports the goal complete, with durable state in `.grokgoblin/cruise/`. |
 | `gg supragoal <goal>` | Durable multi-goal decomposition workflow. |
 | `gg ralph <task>` | Persistent completion loop for a single task. |
-| `gg team [N[:role]] <task>` | Orchestrate up to N parallel grok **subagents** on a task (one session, native `Task` tool). Add `--tmux` for the legacy multi-pane interactive mode. |
+| `gg goblins [N[:role]] <task>` | Orchestrate up to N parallel grok **subagents** ("goblins") on a task (one session, native `Task` tool). Add `--tmux` for the legacy multi-pane interactive mode. |
 
 ### Config & discovery
 | Command | Description |
@@ -93,8 +93,17 @@ gg config model fast                   # set the default grok model
 
 GrokGoblin uses grok's own extension points, so there's no separate agent runtime:
 
-- **Subagent roles** → GrokGoblin's specialist roles (analyst, planner, architect, executor, debugger, reviewer, security-reviewer, researcher, verifier, team-worker) are installed as **real grok subagents** (`config.toml [subagents.roles.*]` + per-role prompt files). The orchestrator spawns them as parallel grok child sessions via grok's `Task` tool — read-only roles are capability-locked so they can't modify files. No SuperGrok/paid tier required.
-- **Skills** → installed to `~/.grok/skills/` and invoked as `/cruise`, `/supragoal`, `/ralph`, `/deep-interview`, etc.
+- **Goblin subagents** → GrokGoblin's specialist goblins are installed as **real grok subagents** (`config.toml [subagents.roles.*]` + per-role prompt files) and spawned in parallel via grok's `Task` tool. Read-only goblins are capability-locked so they can't modify files. No SuperGrok/paid tier required.
+
+  | Goblin | Specialty | Goblin | Specialty |
+  |---|---|---|---|
+  | **sniffer** | analyze code & requirements | **nitpick** | code review |
+  | **schemer** | planning | **warden** | security review |
+  | **tinker** | architecture/design | **forager** | research (read-only) |
+  | **basher** | implementation | **prover** | verification/tests |
+  | **squasher** | debugging | **grunt** | parallel worker |
+
+- **Skills** → installed to `~/.grok/skills/` and invoked as `/cruise`, `/supragoal`, `/ralph`, `/goblinplan`, `/goblins`, `/deep-interview`, etc.
 - **Hooks** → installed to `~/.grok/hooks/hooks.json` (Claude-Code schema) and fire on grok's tool/session lifecycle.
 - **`AGENTS.md`** → the orchestration brain, appended to grok's system prompt.
 - **Config** → manages real `config.toml` keys (default model, compaction, permissions).
