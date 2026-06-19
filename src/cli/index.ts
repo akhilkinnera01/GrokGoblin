@@ -177,7 +177,7 @@ function printHelp(): void {
   print("  gg cruise <goal>        Autonomous headless loop until goal complete");
   print("  gg supragoal <goal>        Launch durable multi-goal workflow");
   print("  gg ralph <task>            Persistent completion loop");
-  print("  gg team <task>             Parallel multi-agent execution (tmux)");
+  print("  gg team [N] <task>          Orchestrate N parallel grok subagents (--tmux for panes)");
   print("");
   print(bold("Hooks:"));
   print("  gg hooks list              List registered hooks");

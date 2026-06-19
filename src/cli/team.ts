@@ -4,7 +4,9 @@ import {
   resolveGrokHome,
   resolveGgStateDir,
   DEFAULT_FAST_MODEL,
+  DEFAULT_FRONTIER_MODEL,
 } from "../utils/paths.js";
+import { AGENT_DEFINITIONS } from "../agents/definitions.js";
 import {
   print,
   ok,
@@ -24,6 +26,7 @@ import {
   tmuxKillSession,
   isGitRepo,
   gitRepoRoot,
+  spawnGrokHeadless,
 } from "../utils/exec.js";
 import { ensureDir, writeJsonFile, readJsonFile } from "../utils/toml.js";
 import { ggSessionId } from "../utils/paths.js";
@@ -71,8 +74,90 @@ export async function runTeam(
       await runTeamResume(cwd, args[1]);
       break;
     default:
-      await runTeamLaunch(cwd, args, flags);
+      // Default: orchestrate real grok subagents in one session (no tmux).
+      // `--tmux` keeps the legacy multi-pane interactive mode.
+      if (flags["tmux"]) {
+        await runTeamLaunch(cwd, args, flags);
+      } else {
+        await runTeamNative(cwd, args, flags);
+      }
       break;
+  }
+}
+
+// Native team: a single grok "leader" session that fans the task out to parallel
+// role-subagents via grok's Task tool, using the roles GrokGoblin installs.
+async function runTeamNative(
+  cwd: string,
+  args: string[],
+  flags: Record<string, string | boolean | number>
+): Promise<void> {
+  const grokBin = process.env["GROK_BIN"] ?? "grok";
+  if (!commandExists(grokBin)) {
+    warn("grok CLI not found. Run `gg setup` first.");
+    process.exit(1);
+  }
+
+  const taskStr = args.join(" ").trim();
+  const workerMatch = taskStr.match(/^(\d+)(?::([\w-]+))?\s+(.+)$/);
+  let workerCount = 3;
+  let preferredRole = "";
+  let task = taskStr;
+  if (workerMatch) {
+    workerCount = Math.min(8, Math.max(1, parseInt(workerMatch[1]!)));
+    preferredRole = workerMatch[2] ?? "";
+    task = workerMatch[3]!;
+  }
+  if (!task) {
+    warn("gg team requires a task description");
+    print('  Example: gg team 3 "refactor the auth module and add tests"');
+    print('  Legacy tmux panes: gg team --tmux 3:executor "..."');
+    process.exit(1);
+  }
+
+  const roleNames = Object.keys(AGENT_DEFINITIONS);
+  const grokHome = resolveGrokHome();
+  const leaderModel = (flags["model"] as string) ?? DEFAULT_FRONTIER_MODEL;
+
+  header("GrokGoblin Team (native subagents)");
+  print(`${dim("task:")}    ${task}`);
+  print(`${dim("workers:")} up to ${workerCount} parallel subagents`);
+  print(`${dim("roles:")}   ${roleNames.join(", ")}`);
+  print(`${dim("leader:")}  ${leaderModel}`);
+  print("");
+
+  const prompt = [
+    "You are the TEAM LEADER orchestrating a multi-agent effort.",
+    "",
+    `## Task\n${task}`,
+    "",
+    "## How to work",
+    `- Decompose the task into independent pieces and use the \`task\` tool to spawn UP TO ${workerCount} parallel subagents.`,
+    `- Prefer these GrokGoblin specialist roles where they fit: ${roleNames.join(", ")}.`,
+    preferredRole ? `- Bias toward the \`${preferredRole}\` role for the worker subagents.` : "",
+    "- Assign each subagent a clear, self-contained scope. Run independent work in parallel.",
+    "- After subagents return, integrate their results, resolve conflicts, and verify (build/tests) if applicable.",
+    "- Finish with a concise summary of what each subagent did and the final outcome.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const grokArgs = ["--always-approve", "--output-format", "plain", "-m", leaderModel];
+
+  const result = spawnGrokHeadless(
+    prompt,
+    grokArgs,
+    { ...process.env, GROK_HOME: grokHome },
+    grokBin
+  );
+
+  const output = (result.stdout || result.stderr || "").trim();
+  if (output) print(output);
+  print("");
+  if (result.ok) {
+    ok("Team run complete.");
+  } else {
+    warn(`Team run exited with status ${result.status}.`);
   }
 }
 

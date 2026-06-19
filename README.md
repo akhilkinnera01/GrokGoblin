@@ -65,7 +65,7 @@ gg config model fast                   # set the default grok model
 | `gg cruise <goal>` | **Autonomous loop** — re-invokes grok until it reports the goal complete, with durable state in `.grokgoblin/cruise/`. |
 | `gg supragoal <goal>` | Durable multi-goal decomposition workflow. |
 | `gg ralph <task>` | Persistent completion loop for a single task. |
-| `gg team <task>` | Parallel multi-agent execution (tmux). |
+| `gg team [N[:role]] <task>` | Orchestrate up to N parallel grok **subagents** on a task (one session, native `Task` tool). Add `--tmux` for the legacy multi-pane interactive mode. |
 
 ### Config & discovery
 | Command | Description |
