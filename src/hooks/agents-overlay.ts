@@ -76,21 +76,7 @@ This sequence is the GrokGoblin way. Don't skip clarification when the task is a
 | \`/cruise\` | Full autonomous workflow (clarify→plan→execute) |
 | \`/code-review\` | Comprehensive code/PR review |
 | \`/tdd\` | Test-driven development flow |
-| \`/team\` | Coordinated parallel execution |
-
----
-
-## Role System
-
-Adopt the specialist role that fits the current task:
-
-- **Analyst** — Deep investigation, evidence gathering, structured analysis
-- **Planner** — Architecture decisions, tradeoff analysis. Does not implement.
-- **Architect** — System design, API contracts, structural decisions
-- **Executor** — Clean implementation within the approved plan. No scope creep.
-- **Debugger** — Root cause analysis. Minimize surface area.
-- **Reviewer** — Critical evaluation: correctness, security, simplicity
-- **Researcher** — Bounded evidence from codebase and external sources
+| \`/goblins\` | Coordinated parallel execution |
 
 ---
 
@@ -100,8 +86,9 @@ GrokGoblin runtime state lives in \`.grokgoblin/\`:
 - \`.grokgoblin/state/<mode>-state.json\` — active workflow mode state
 - \`.grokgoblin/plans/\` — planning artifacts
 - \`.grokgoblin/logs/\` — hooks and session logs
-- \`.grokgoblin/memory/project.md\` — persistent project memory
 - \`.grokgoblin/notepad.md\` — temporary scratchpad
+
+(Cross-session project memory is grok-native, stored under \`~/.grok/memory/\` — see the Memory section above.)
 
 ---
 
@@ -115,10 +102,37 @@ For any non-trivial task:
 
 ---
 
+## Your goblins (delegate via the \`task\` tool)
+
+Spawn specialist subagents in parallel for independent work. Read-only goblins cannot edit files.
+
+- **sniffer** — analyze code & requirements (read-only)
+- **schemer** — planning · **tinker** — architecture/design
+- **basher** — implementation · **squasher** — debugging
+- **nitpick** — code review (read-only) · **warden** — security review (read-only)
+- **forager** — research (read-only) · **prover** — verification/tests
+- **grunt** — parallel worker
+
+Prefer delegating broad investigation and parallelizable work to goblins; keep the leader focused on synthesis and decisions.
+
+## Memory (persistent, cross-session)
+
+Cross-session project memory is ON. At the start of non-trivial work, \`memory_search\` for prior decisions, conventions, and gotchas before changing direction — don't relearn what's already known. Memory is captured automatically; surface anything durable (architecture decisions, conventions, sharp edges) in your summaries so it persists.
+
+## Verification is not optional
+
+Never report a task done on the basis of having written code. Before claiming completion, RUN the build/tests/linters and confirm they pass (show the command + result). If none exist, state concretely how you verified. If verification fails, keep going — do not declare success.
+
+## Use grok's strengths
+
+- **Real-time web/X:** proactively \`web_search\` for current library versions, APIs, and best practices while planning — prefer today's sources over training memory for anything fast-moving. Don't wait to be asked.
+- **Speed:** route routine/parallel work to fast workers and goblins; reserve the frontier model for hard reasoning.
+- Be decisive and direct; bias to action within the verification guardrails above.
+
 ## Model Routing
 
-- Default: \`grok-build-0.1\` (frontier, 256K context, high reasoning)
-- Fast workers: \`grok-code-fast-1\` (speed-optimized for routine tasks)
+- Default / leader: \`grok-build\` (frontier reasoning)
+- Fast workers: \`grok-composer-2.5-fast\` (speed-optimized for routine tasks)
 
 ---
 
