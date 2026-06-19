@@ -1,6 +1,15 @@
-# 👺 GrokGoblin (`gg`)
+<p align="center">
+  <img src="assets/banner.jpg" alt="GrokGoblin — for Grok CLI" width="720">
+</p>
 
-> A multi-agent orchestration layer for the [xAI Grok CLI](https://x.ai) — structured workflows, real grok subagents, lifecycle hooks, and durable autonomous execution.
+<h1 align="center">GrokGoblin <code>(gg)</code></h1>
+
+<p align="center">
+  A multi-agent orchestration layer for the <a href="https://x.ai">xAI Grok CLI</a><br>
+  <em>structured workflows · real grok subagents · lifecycle hooks · durable autonomous execution</em>
+</p>
+
+---
 
 GrokGoblin wraps the `grok` CLI you already use and turns it into an opinionated, repeatable engineering workflow: clarify → plan → execute, with specialist roles, persistent loops, and an autonomous mode that keeps working until the job is done.
 
