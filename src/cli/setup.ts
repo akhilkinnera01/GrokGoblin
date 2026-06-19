@@ -133,6 +133,11 @@ export async function runSetup(
   ensureGrokConfigDefaults(grokHome);
   ok(migrated ? "config.toml updated (cleaned legacy keys)" : "config.toml updated");
 
+  step("Installing grok subagent roles...");
+  const { installSubagentRoles } = await import("../config/subagents.js");
+  const roleCount = installSubagentRoles(grokHome);
+  ok(`${roleCount} subagent roles registered (config.toml [subagents.roles])`);
+
   step("Installing hooks...");
   writeGrokHooksJson(grokHome, ggBin);
   ok("hooks/hooks.json updated");
@@ -178,6 +183,11 @@ export async function runUninstall(cwd: string): Promise<void> {
   step("Removing GrokGoblin hooks...");
   removeGgHooks(grokHome);
   ok("Hooks removed");
+
+  step("Removing GrokGoblin subagent roles...");
+  const { removeSubagentRoles } = await import("../config/subagents.js");
+  removeSubagentRoles(grokHome);
+  ok("Subagent roles removed");
 
   print("");
   ok("grokgoblin uninstalled. Run `gg setup` to reinstall.");

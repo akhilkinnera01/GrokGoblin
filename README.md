@@ -83,10 +83,13 @@ gg config model fast                   # set the default grok model
 
 GrokGoblin uses grok's own extension points, so there's no separate agent runtime:
 
+- **Subagent roles** → GrokGoblin's specialist roles (analyst, planner, architect, executor, debugger, reviewer, security-reviewer, researcher, verifier, team-worker) are installed as **real grok subagents** (`config.toml [subagents.roles.*]` + per-role prompt files). The orchestrator spawns them as parallel grok child sessions via grok's `Task` tool — read-only roles are capability-locked so they can't modify files. No SuperGrok/paid tier required.
 - **Skills** → installed to `~/.grok/skills/` and invoked as `/cruise`, `/supragoal`, `/ralph`, `/deep-interview`, etc.
 - **Hooks** → installed to `~/.grok/hooks/hooks.json` (Claude-Code schema) and fire on grok's tool/session lifecycle.
 - **`AGENTS.md`** → the orchestration brain, appended to grok's system prompt.
 - **Config** → manages real `config.toml` keys (default model, compaction, permissions).
+
+Inspect roles with `gg agents` or `gg list agents`.
 
 > ⚠️ **Reasoning effort:** the currently available grok models (`grok-build`, `grok-composer-2.5-fast`) don't support a reasoning-effort parameter, so `--high`/`--effort` are accepted but no-op until grok ships an effort-capable model.
 

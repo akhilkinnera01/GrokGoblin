@@ -161,6 +161,18 @@ export async function runDoctor(
     )
   );
 
+  const { countInstalledRoles } = await import("../config/subagents.js");
+  const roleCount = countInstalledRoles(grokHome);
+  results.push(
+    warn_check(
+      "subagent roles",
+      roleCount > 0,
+      `${roleCount} grok subagent roles registered`,
+      "no subagent roles in config.toml — run `gg setup`",
+      "gg setup"
+    )
+  );
+
   if (existsSync(hooksJsonPath)) {
     const { readFileOrEmpty } = await import("../utils/toml.js");
     const content = readFileOrEmpty(hooksJsonPath);
