@@ -74,6 +74,9 @@ function resolvePolicy(
 function buildGrokArgs(options: LaunchOptions): string[] {
   const args: string[] = [];
 
+  // Expose grok's cross-session memory tools (memory_search/get) in-session.
+  args.push("--experimental-memory");
+
   // grok's permission/effort flags are honored in headless mode (`-p`); in the
   // interactive TUI grok prints a warning and ignores them (see grok README).
   if (options.mode === "plan") {

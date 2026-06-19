@@ -131,7 +131,10 @@ export async function runSetup(
   const configPath = resolveGrokConfigPath(grokHome);
   const migrated = migrateLegacyGgConfig(grokHome);
   ensureGrokConfigDefaults(grokHome);
-  ok(migrated ? "config.toml updated (cleaned legacy keys)" : "config.toml updated");
+  // Enable grok's native cross-session memory: persistent, queryable (SQLite
+  // FTS5 + vector) project memory, auto-injected on first turn / after compaction.
+  writeGrokConfig(grokHome, { memory: { enabled: true } });
+  ok(migrated ? "config.toml updated (cleaned legacy keys; memory enabled)" : "config.toml updated (memory enabled)");
 
   step("Installing grok subagent roles...");
   const { installSubagentRoles } = await import("../config/subagents.js");

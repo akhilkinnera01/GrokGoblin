@@ -92,7 +92,7 @@ export async function runCruise(
   print(`${dim("state:")} ${runDir}`);
   print("");
 
-  const grokArgs = ["--always-approve", "--output-format", "plain"];
+  const grokArgs = ["--always-approve", "--experimental-memory", "--output-format", "plain"];
   if (model) grokArgs.push("-m", model);
 
   let completed = false;

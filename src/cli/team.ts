@@ -142,7 +142,7 @@ async function runTeamNative(
     .filter(Boolean)
     .join("\n");
 
-  const grokArgs = ["--always-approve", "--output-format", "plain", "-m", leaderModel];
+  const grokArgs = ["--always-approve", "--experimental-memory", "--output-format", "plain", "-m", leaderModel];
 
   const result = spawnGrokHeadless(
     prompt,

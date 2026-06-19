@@ -68,6 +68,16 @@ gg config model fast                   # set the default grok model
 | `gg ralph <task>` | Persistent completion loop for a single task. |
 | `gg goblins [N[:role]] <task>` | Orchestrate up to N parallel grok **subagents** ("goblins") on a task (one session, native `Task` tool). Add `--tmux` for the legacy multi-pane interactive mode. |
 
+### Memory
+GrokGoblin turns on grok's **native cross-session memory** — persistent, queryable project memory (Markdown under `~/.grok/memory/`, indexed in SQLite with hybrid FTS5 keyword + vector search), keyed per project by git remote so clones/worktrees share it. It's auto-injected on the first turn and after compaction, and the agent can recall it mid-session via `memory_search`.
+
+| Command | Description |
+|---|---|
+| `gg memory` | Show memory status and per-project stores. |
+| `gg memory search "<q>"` | Query cross-session memory. |
+| `gg memory on` / `off` | Toggle persistence. |
+| `gg memory edit` / `clear` | Edit global memory / clear workspace memory. |
+
 ### Config & discovery
 | Command | Description |
 |---|---|

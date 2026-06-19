@@ -13,6 +13,7 @@ type CliCommand =
   | "ask"
   | "explore"
   | "autoresearch"
+  | "memory"
   | "list"
   | "cruise"
   | "supragoal"
@@ -102,6 +103,7 @@ function resolveCliInvocation(argv: string[]): ResolvedCliInvocation {
     "ask",
     "explore",
     "autoresearch",
+    "memory",
     "list",
     "cruise",
     "supragoal",
@@ -175,7 +177,8 @@ function printHelp(): void {
   print("  gg config set <key> <val>  Write a config value");
   print("  gg config model fast       Set default model to grok-composer-2.5-fast");
   print("");
-  print(bold("Discovery:"));
+  print(bold("Memory & discovery:"));
+  print("  gg memory [status|search|on|off|edit]     Persistent cross-session project memory");
   print("  gg list [skills|agents|cruise|sessions]   List installed/tracked items");
   print("");
   print(bold("Workflows:"));
@@ -350,6 +353,12 @@ export async function main(argv: string[]): Promise<void> {
     case "config": {
       const { runConfig } = await import("./config.js");
       await runConfig(cwd, args);
+      break;
+    }
+
+    case "memory": {
+      const { runMemory } = await import("./memory.js");
+      await runMemory(cwd, args);
       break;
     }
 
