@@ -75,8 +75,6 @@ This sequence is the GrokGoblin way. Don't skip clarification when the task is a
 | \`/supragoal\` | Durable multi-goal execution with checkpoints |
 | \`/cruise\` | Full autonomous workflow (clarify→plan→execute) |
 | \`/code-review\` | Comprehensive code/PR review |
-| \`/research\` | Bounded evidence gathering |
-| \`/build-fix\` | Systematic bug diagnosis and fix |
 | \`/tdd\` | Test-driven development flow |
 | \`/team\` | Coordinated parallel execution |
 

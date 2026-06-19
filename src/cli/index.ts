@@ -209,8 +209,6 @@ function printHelp(): void {
   print("  /supragoal                  Durable multi-goal execution");
   print("  /cruise                  Full autonomous workflow");
   print("  /code-review                Code/PR review");
-  print("  /research                   Bounded evidence gathering");
-  print("  /build-fix                  Bug diagnosis and fix");
   print("  /tdd                        Test-driven development");
   print("  /goblins                    Parallel execution");
   print("");

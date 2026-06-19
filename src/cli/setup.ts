@@ -38,8 +38,6 @@ const BUILTIN_SKILLS = [
   "supragoal",
   "cruise",
   "code-review",
-  "research",
-  "build-fix",
   "tdd",
   "goblins",
 ];

@@ -113,7 +113,7 @@ GrokGoblin uses grok's own extension points, so there's no separate agent runtim
   | **basher** | implementation | **prover** | verification/tests |
   | **squasher** | debugging | **grunt** | parallel worker |
 
-- **Skills** → installed to `~/.grok/skills/` and invoked as `/cruise`, `/supragoal`, `/ralph`, `/goblinplan`, `/goblins`, `/deep-interview`, etc.
+- **Skills** → a deliberately small set of `/` commands (no command sprawl): `/goblinplan`, `/deep-interview`, `/cruise`, `/supragoal`, `/ralph`, `/goblins`, `/code-review`, `/tdd`.
 - **Hooks** → installed to `~/.grok/hooks/hooks.json` (Claude-Code schema) and fire on grok's tool/session lifecycle.
 - **`AGENTS.md`** → the orchestration brain, appended to grok's system prompt.
 - **Config** → manages real `config.toml` keys (default model, compaction, permissions).
