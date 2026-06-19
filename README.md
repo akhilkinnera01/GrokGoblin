@@ -56,6 +56,7 @@ gg config model fast                   # set the default grok model
 | `gg` | Launch grok interactively with the GrokGoblin orchestration layer. |
 | `gg ask <question>` | Quick one-shot question — headless, plain output, no git repo required. |
 | `gg explore <topic>` | Read-only investigation, restricted to read/search tools (cannot modify files). |
+| `gg autoresearch <topic>` | Multi-facet **read-only** research — fans out parallel `researcher` subagents and synthesizes a structured report (saved to `.grokgoblin/research/`). |
 | `gg exec <prompt>` | Run a headless grok task (streaming JSON by default). |
 | `gg exec --check` | Verify grok auth end-to-end. |
 

@@ -12,6 +12,7 @@ type CliCommand =
   | "exec"
   | "ask"
   | "explore"
+  | "autoresearch"
   | "list"
   | "cruise"
   | "supragoal"
@@ -99,6 +100,7 @@ function resolveCliInvocation(argv: string[]): ResolvedCliInvocation {
     "exec",
     "ask",
     "explore",
+    "autoresearch",
     "list",
     "cruise",
     "supragoal",
@@ -160,6 +162,7 @@ function printHelp(): void {
   print(bold("Execution:"));
   print("  gg ask <question>          Quick one-shot question (no repo needed)");
   print("  gg explore <topic>         Read-only investigation (no edits)");
+  print("  gg autoresearch <topic>    Multi-facet read-only research (parallel subagents)");
   print("  gg exec <prompt>           Run a headless grok task");
   print("  gg exec --check            Test grok authentication");
   print("  gg exec --effort high <p>  Headless task with high reasoning effort");
@@ -380,6 +383,17 @@ export async function main(argv: string[]): Promise<void> {
     case "list": {
       const { runList } = await import("./list.js");
       await runList(cwd, args);
+      break;
+    }
+
+    case "autoresearch": {
+      const { runAutoresearch } = await import("./autoresearch.js");
+      const facetsRaw = flags["facets"] as string | undefined;
+      await runAutoresearch(cwd, args.join(" ").trim(), {
+        facets: facetsRaw ? Number(facetsRaw) : undefined,
+        model: flags["model"] as string | undefined,
+        out: flags["out"] as string | undefined,
+      });
       break;
     }
 
