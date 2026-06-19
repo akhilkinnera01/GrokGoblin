@@ -1,0 +1,56 @@
+{
+  "name": "grokgoblin",
+  "version": "0.1.0",
+  "description": "GrokGoblin — a multi-agent orchestration layer for the xAI Grok CLI: structured workflows, real grok subagents, hooks, and durable autonomous execution",
+  "license": "MIT",
+  "author": {
+    "name": "akhilkinnera01",
+    "email": "akhilkinnera01@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/akhilkinnera/grokgoblin"
+  },
+  "homepage": "https://github.com/akhilkinnera/grokgoblin#readme",
+  "keywords": [
+    "grok",
+    "grok-cli",
+    "xai",
+    "ai",
+    "cli",
+    "coding-agent",
+    "multi-agent",
+    "subagents",
+    "workflow",
+    "grokgoblin"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "gg": "./dist/index.js",
+    "grokgoblin": "./dist/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "skills",
+    "prompts",
+    "hooks"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@iarna/toml": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  }
+}
