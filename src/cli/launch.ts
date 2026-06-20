@@ -37,6 +37,7 @@ import {
   generateWorktreeName,
   slugifyWorktreeName,
 } from "../utils/worktree.js";
+import { leaderSocketArgs } from "../utils/leader.js";
 import { printIsolationBanner } from "./worktree.js";
 import { step, warn, info, print, dim, bold } from "../utils/print.js";
 import { ensureDir, readFileOrEmpty } from "../utils/toml.js";
@@ -261,6 +262,7 @@ export async function runLaunch(
 
   const grokArgs = [
     ...buildGrokArgs(options),
+    ...leaderSocketArgs(grokHome, launchCwd, env),
     ...extraArgs,
     "--cwd", launchCwd,
   ];
@@ -343,6 +345,10 @@ export async function runExec(
   }
 
   const args = ["-p", prompt, "--output-format", options.outputFormat ?? "streaming-json"];
+
+  // Isolate the leader by MCP-config fingerprint so headless runs pick up MCP
+  // config edits instead of attaching to a stale leader's cached servers.
+  args.push(...leaderSocketArgs(grokHome, cwd, process.env));
 
   if (options.model) {
     args.push("-m", options.model);
