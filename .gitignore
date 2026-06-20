@@ -9,3 +9,16 @@ dist/
 
 # Local-only verification notes (not shipped)
 TEST_REPORT.md
+
+# Secrets & credentials — never commit (defensive)
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+auth.json
+.npmrc
+.netrc
+secrets.*
+*.credentials
