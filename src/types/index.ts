@@ -11,8 +11,8 @@ export type GgMode =
   | "ralph"
   | "cruise"
   | "goblinplan"
-  | "deep-interview"
-  | "supragoal"
+  | "dig"
+  | "quest"
   | "research"
   | "team";
 

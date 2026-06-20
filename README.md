@@ -61,12 +61,16 @@ gg config model fast                   # set the default grok model
 | `gg exec --check` | Verify grok auth end-to-end. |
 
 ### Workflows
+All three are **autonomous headless loops** — they re-invoke grok across multiple turns and only stop on a verified completion signal (or the iteration cap), so they don't quit after a single turn. Each enforces a **verification gate**: grok may only declare done after it has actually run the build/tests and they pass. Durable per-run state (goal, progress ledger, full log) lives under `.grokgoblin/<kind>/`.
+
 | Command | Description |
 |---|---|
-| `gg cruise <goal>` | **Autonomous loop** — re-invokes grok until it reports the goal complete, with durable state in `.grokgoblin/cruise/`. |
-| `gg supragoal <goal>` | Durable multi-goal decomposition workflow. |
-| `gg ralph <task>` | Persistent completion loop for a single task. |
+| `gg cruise <goal>` | Full pipeline loop: **dig → goblinplan → quest → tdd → code-review**, driven to completion. |
+| `gg quest <goal>` | Durable multi-goal loop — decomposes the objective into checkpointed sub-goals and completes them one at a time. |
+| `gg ralph <task>` | Persistent single-task completion loop. |
 | `gg goblins [N[:role]] <task>` | Orchestrate up to N parallel grok **subagents** ("goblins") on a task (one session, native `Task` tool). Add `--tmux` for the legacy multi-pane interactive mode. |
+
+Common flags: `--max-iterations <n>` (default 8) · `--fast` · `--model <id>` · `--skip-git-repo-check`.
 
 ### Memory
 GrokGoblin turns on grok's **native cross-session memory** — persistent, queryable project memory (Markdown under `~/.grok/memory/`, indexed in SQLite with hybrid FTS5 keyword + vector search), keyed per project by git remote so clones/worktrees share it. It's auto-injected on the first turn and after compaction, and the agent can recall it mid-session via `memory_search`.
@@ -128,7 +132,7 @@ GrokGoblin uses grok's own extension points, so there's no separate agent runtim
   | **basher** | implementation | **prover** | verification/tests |
   | **squasher** | debugging | **grunt** | parallel worker |
 
-- **Skills** → a deliberately small set of `/` commands (no command sprawl): `/goblinplan`, `/deep-interview`, `/cruise`, `/supragoal`, `/ralph`, `/goblins`, `/code-review`, `/tdd`.
+- **Skills** → a deliberately small set of `/` commands (no command sprawl): `/goblinplan`, `/dig`, `/cruise`, `/quest`, `/ralph`, `/goblins`, `/code-review`, `/tdd`.
 - **Hooks** → installed to `~/.grok/hooks/hooks.json` (Claude-Code schema) and fire on grok's tool/session lifecycle.
 - **`AGENTS.md`** → the orchestration brain, appended to grok's system prompt.
 - **Config** → manages real `config.toml` keys (default model, compaction, permissions).

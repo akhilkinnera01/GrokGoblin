@@ -16,6 +16,7 @@ type CliCommand =
   | "memory"
   | "list"
   | "cruise"
+  | "quest"
   | "supragoal"
   | "config"
   | "skills"
@@ -108,6 +109,7 @@ function resolveCliInvocation(argv: string[]): ResolvedCliInvocation {
     "memory",
     "list",
     "cruise",
+    "quest",
     "supragoal",
     "config",
     "skills",
@@ -186,10 +188,10 @@ function printHelp(): void {
   print("  gg memory [status|search|on|off|edit]     Persistent cross-session project memory");
   print("  gg list [skills|agents|cruise|sessions]   List installed/tracked items");
   print("");
-  print(bold("Workflows:"));
-  print("  gg cruise <goal>        Autonomous headless loop until goal complete");
-  print("  gg supragoal <goal>        Launch durable multi-goal workflow");
-  print("  gg ralph <task>            Persistent completion loop");
+  print(bold("Workflows (autonomous loops with a verification gate):"));
+  print("  gg cruise <goal>           Full pipeline loop: dig→goblinplan→quest→tdd→code-review");
+  print("  gg quest <goal>            Durable multi-goal loop with checkpoints");
+  print("  gg ralph <task>            Persistent single-task completion loop");
   print("  gg goblins [N] <task>       Orchestrate N parallel grok subagents (--tmux for panes)");
   print("");
   print(bold("Worktrees (isolated workspaces):"));
@@ -214,11 +216,11 @@ function printHelp(): void {
   print("  gg help                    Print this help");
   print("");
   print(bold("In-session skills (invoke inside grok with /<name>):"));
-  print("  /deep-interview             Structured requirements clarification");
-  print("  /goblinplan                   Planning + tradeoff synthesis");
+  print("  /dig                        Structured requirements clarification");
+  print("  /goblinplan                 Planning + tradeoff synthesis");
   print("  /ralph                      Persistent completion loop");
-  print("  /supragoal                  Durable multi-goal execution");
-  print("  /cruise                  Full autonomous workflow");
+  print("  /quest                      Durable multi-goal execution");
+  print("  /cruise                     Full pipeline: dig→goblinplan→quest→tdd→code-review");
   print("  /code-review                Code/PR review");
   print("  /tdd                        Test-driven development");
   print("  /goblins                    Parallel execution");
@@ -431,12 +433,20 @@ export async function main(argv: string[]): Promise<void> {
       break;
     }
 
+    case "quest":
     case "supragoal": {
-      // Launch grok interactively into the /supragoal goal-decomposition workflow.
-      const goal = args.join(" ");
-      if (!goal) exitWithError("gg supragoal requires a goal description");
-      const { runLaunch } = await import("./launch.js");
-      await runLaunch(cwd, {}, ["-p", `/supragoal ${goal}`]);
+      // Durable multi-goal decomposition — runs as an autonomous, checkpointed
+      // loop (not a single headless turn) so it actually drives to completion.
+      const goal = args.join(" ").trim();
+      if (!goal) exitWithError("gg quest requires a goal description");
+      const { runQuest } = await import("./cruise.js");
+      const maxRaw = flags["max-iterations"] as string | undefined;
+      await runQuest(cwd, goal, {
+        maxIterations: maxRaw ? Number(maxRaw) : undefined,
+        model: flags["model"] as string | undefined,
+        fast: Boolean(flags["fast"]),
+        skipGitRepoCheck: Boolean(flags["skip-git-repo-check"]),
+      });
       break;
     }
 
@@ -543,11 +553,18 @@ export async function main(argv: string[]): Promise<void> {
     }
 
     case "ralph": {
-      const task = args.join(" ");
+      // Persistent single-task completion — autonomous loop with a verification
+      // gate, rather than one headless turn that would exit after setup.
+      const task = args.join(" ").trim();
       if (!task) exitWithError("gg ralph requires a task description");
-      const { runLaunch } = await import("./launch.js");
-      process.env["GG_RALPH_TASK"] = task;
-      await runLaunch(cwd, { high: true }, ["-p", `/ralph ${task}`]);
+      const { runRalph } = await import("./cruise.js");
+      const maxRaw = flags["max-iterations"] as string | undefined;
+      await runRalph(cwd, task, {
+        maxIterations: maxRaw ? Number(maxRaw) : undefined,
+        model: flags["model"] as string | undefined,
+        fast: Boolean(flags["fast"]),
+        skipGitRepoCheck: Boolean(flags["skip-git-repo-check"]),
+      });
       break;
     }
 

@@ -92,8 +92,8 @@ export function getActiveModes(cwd: string, sessionId?: string): GgMode[] {
     "ralph",
     "cruise",
     "goblinplan",
-    "deep-interview",
-    "supragoal",
+    "dig",
+    "quest",
     "research",
     "team",
   ];

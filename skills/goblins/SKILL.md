@@ -87,4 +87,4 @@ Each worker should:
 - Requires tmux (install with `brew install tmux`)
 - Workers don't communicate — integration is the leader's job
 - Best for I/O-bound work (multiple independent file changes)
-- Not for work with sequential dependencies (use `/supragoal` instead)
+- Not for work with sequential dependencies (use `/quest` instead)

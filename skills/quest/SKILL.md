@@ -1,14 +1,14 @@
-# /supragoal
+# /quest
 
 Durable multi-goal execution with ledger checkpoints.
 
 ## Purpose
 
-Supragoal breaks a large task into a sequence of discrete, checkpointed goals. 
+Quest breaks a large task into a sequence of discrete, checkpointed goals. 
 Each goal is a verifiable unit of work. Grok works through them sequentially, 
 logging completion evidence to a ledger so progress is never lost.
 
-Use supragoal when:
+Use quest when:
 - The task is too large for a single `/ralph` run
 - You need to pause and resume across sessions
 - You want auditable checkpoint evidence
@@ -26,7 +26,7 @@ Goals:
   G002: {second goal} — criteria: {how to verify}
   G003: ...
 
-Ledger: .grokgoblin/supragoal/ledger.jsonl
+Ledger: .grokgoblin/quest/ledger.jsonl
 ```
 
 ### Per-Goal Execution
@@ -49,13 +49,13 @@ For each goal Gxxx:
 [SUPRAGOAL COMPLETE]
 Goals completed: {n}/{total}
 Total evidence: {summary}
-Ledger: .grokgoblin/supragoal/ledger.jsonl
+Ledger: .grokgoblin/quest/ledger.jsonl
 ```
 
 ## Files
 
 ```
-.grokgoblin/supragoal/
+.grokgoblin/quest/
 ├── brief.md          — Original task brief
 ├── goals.json        — Structured goal list with criteria
 ├── ledger.jsonl      — Checkpoint evidence per goal
@@ -71,7 +71,7 @@ Ledger: .grokgoblin/supragoal/ledger.jsonl
 
 ## State
 
-`.grokgoblin/state/supragoal-state.json`:
+`.grokgoblin/state/quest-state.json`:
 ```json
 {
   "active": true,
@@ -79,6 +79,6 @@ Ledger: .grokgoblin/supragoal/ledger.jsonl
   "totalGoals": 5,
   "completedGoals": 1,
   "phase": "execution",
-  "ledgerPath": ".grokgoblin/supragoal/ledger.jsonl"
+  "ledgerPath": ".grokgoblin/quest/ledger.jsonl"
 }
 ```

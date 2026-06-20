@@ -11,59 +11,146 @@ import {
   info,
   step,
   dim,
-  bold,
   exitWithError,
 } from "../utils/print.js";
 
-const COMPLETE_SENTINEL = "CRUISE-COMPLETE";
-const CONTINUE_SENTINEL = "CRUISE-CONTINUE";
+// Shared completion sentinels for every GrokGoblin autonomous loop. Keeping one
+// pair means cruise/quest/ralph all drive to completion the same reliable way.
+const COMPLETE_SENTINEL = "GG-COMPLETE";
+const CONTINUE_SENTINEL = "GG-CONTINUE";
+// Back-compat: older cruise prompts emitted CRUISE-COMPLETE; still honor it.
+const LEGACY_COMPLETE = "CRUISE-COMPLETE";
 const DEFAULT_MAX_ITERATIONS = 8;
 
-export interface CruiseOptions {
+export interface LoopOptions {
   maxIterations?: number;
   model?: string;
   fast?: boolean;
   skipGitRepoCheck?: boolean;
 }
 
-function buildIterationPrompt(
-  goal: string,
-  iteration: number,
-  maxIterations: number,
-  progressSoFar: string
-): string {
+// Back-compat alias for the previous public name.
+export type CruiseOptions = LoopOptions;
+
+interface LoopSpec {
+  /** Display + state-dir label, e.g. "cruise" | "quest" | "ralph". */
+  kind: string;
+  /** Human title for the header banner. */
+  title: string;
+  /** Builds the per-iteration prompt. */
+  buildPrompt: (ctx: {
+    goal: string;
+    iteration: number;
+    maxIterations: number;
+    progressSoFar: string;
+  }) => string;
+}
+
+// Reusable verification gate appended to every loop prompt so "verify before
+// done" just happens by default — never claim completion on unverified code.
+function verificationGate(): string[] {
   return [
-    "You are running autonomously inside `gg cruise` — a headless loop that re-invokes you each iteration.",
-    `Iteration ${iteration} of at most ${maxIterations}.`,
-    "",
-    "## Goal",
-    goal,
-    "",
-    "## Progress so far (from previous iterations)",
-    progressSoFar.trim() || "(none yet — this is the first iteration)",
-    "",
-    "## Instructions",
-    "- Make concrete, incremental progress toward the goal THIS iteration (edit files, run commands, fix failures).",
-    "- Do not re-do work already completed above. Build on it.",
-    "- Recall relevant prior decisions from memory (memory_search) before changing direction.",
-    "- Keep your response focused: a short summary of what you did and what remains.",
-    "",
     "## Verification gate (mandatory before completing)",
     `- You may ONLY output \`${COMPLETE_SENTINEL}\` if you have just RUN the project's build/tests/linters and they PASS.`,
     "- If there is no test/build command, state explicitly how you verified the goal is met.",
     "- If verification fails or you couldn't verify, keep going — do NOT claim completion.",
     "",
     "## Required final line",
-    `End your response with EXACTLY one of these on its own line:`,
+    "End your response with EXACTLY one of these on its own line:",
     `- \`${COMPLETE_SENTINEL}\` — goal fully achieved AND verified (tests/build pass).`,
     `- \`${CONTINUE_SENTINEL}\` — more work remains for the next iteration.`,
+  ];
+}
+
+function buildCruisePrompt(ctx: {
+  goal: string;
+  iteration: number;
+  maxIterations: number;
+  progressSoFar: string;
+}): string {
+  return [
+    "You are running autonomously inside `gg cruise` — a headless loop that re-invokes you each iteration to drive a task end-to-end.",
+    `Iteration ${ctx.iteration} of at most ${ctx.maxIterations}.`,
+    "",
+    "## Goal",
+    ctx.goal,
+    "",
+    "## GrokGoblin pipeline (follow in order, tracking where you are across iterations)",
+    "1. **dig** — clarify scope, requirements and explicit non-goals.",
+    "2. **goblinplan** — turn the clarified scope into an architecture + step plan.",
+    "3. **quest** — execute the plan as discrete, checkpointed goals.",
+    "4. **tdd** — cover the work with tests (write/extend tests, make them pass).",
+    "5. **code-review** — self-review for correctness, edge cases and regressions; fix what you find.",
+    "",
+    "## Progress so far (from previous iterations)",
+    ctx.progressSoFar.trim() || "(none yet — this is the first iteration)",
+    "",
+    "## Instructions",
+    "- Advance the pipeline THIS iteration; make concrete, incremental progress (edit files, run commands, fix failures).",
+    "- Do not re-do completed work. Build on it. Note which pipeline phase you are in.",
+    "- Recall relevant prior decisions from memory (memory_search) before changing direction.",
+    "- Keep your response focused: what you did, what phase you're in, what remains.",
+    "",
+    ...verificationGate(),
   ].join("\n");
 }
 
-export async function runCruise(
+function buildQuestPrompt(ctx: {
+  goal: string;
+  iteration: number;
+  maxIterations: number;
+  progressSoFar: string;
+}): string {
+  return [
+    "You are running autonomously inside `gg quest` — a durable, checkpointed multi-goal loop that re-invokes you each iteration.",
+    `Iteration ${ctx.iteration} of at most ${ctx.maxIterations}.`,
+    "",
+    "## Overall objective",
+    ctx.goal,
+    "",
+    "## Ledger so far (completed checkpoints from previous iterations)",
+    ctx.progressSoFar.trim() || "(none yet — this is the first iteration)",
+    "",
+    "## Instructions",
+    "- If this is the first iteration, decompose the objective into a short ordered list of discrete, verifiable sub-goals (the quest ledger) and state it.",
+    "- Then complete the NEXT incomplete sub-goal this iteration. One checkpoint at a time.",
+    "- For the sub-goal you complete, record concrete completion evidence (commands run + result).",
+    "- Recall prior decisions from memory (memory_search) before changing direction.",
+    "",
+    ...verificationGate(),
+  ].join("\n");
+}
+
+function buildRalphPrompt(ctx: {
+  goal: string;
+  iteration: number;
+  maxIterations: number;
+  progressSoFar: string;
+}): string {
+  return [
+    "You are running autonomously inside `gg ralph` — a persistent completion loop for a single task that re-invokes you each iteration until it's truly done.",
+    `Iteration ${ctx.iteration} of at most ${ctx.maxIterations}.`,
+    "",
+    "## Task",
+    ctx.goal,
+    "",
+    "## Progress so far (from previous iterations)",
+    ctx.progressSoFar.trim() || "(none yet — this is the first iteration)",
+    "",
+    "## Instructions",
+    "- Make concrete progress toward fully completing the task this iteration.",
+    "- Reflect briefly on what's left and tackle the most important remaining piece.",
+    "- Do not re-do completed work. Recall prior decisions from memory (memory_search).",
+    "",
+    ...verificationGate(),
+  ].join("\n");
+}
+
+async function runLoop(
   cwd: string,
   goal: string,
-  options: CruiseOptions = {}
+  spec: LoopSpec,
+  options: LoopOptions = {}
 ): Promise<void> {
   const grokBin = process.env["GROK_BIN"] ?? "grok";
   const grokHome = resolveGrokHome();
@@ -72,10 +159,10 @@ export async function runCruise(
     exitWithError("grok not found on PATH. Install grok first.");
   }
   if (!goal.trim()) {
-    exitWithError('gg cruise requires a goal, e.g. `gg cruise "add tests for parser"`');
+    exitWithError(`gg ${spec.kind} requires a goal, e.g. \`gg ${spec.kind} "add tests for parser"\``);
   }
   if (!options.skipGitRepoCheck && !isGitRepo(cwd)) {
-    exitWithError("Not in a git repository. cruise edits code — run inside a repo or pass --skip-git-repo-check.");
+    exitWithError(`Not in a git repository. ${spec.kind} edits code — run inside a repo or pass --skip-git-repo-check.`);
   }
 
   const maxIterations = options.maxIterations ?? DEFAULT_MAX_ITERATIONS;
@@ -83,14 +170,14 @@ export async function runCruise(
 
   const repoRoot = gitRepoRoot(cwd) ?? cwd;
   const runId = `${Date.now()}`;
-  const runDir = join(repoRoot, ".grokgoblin", "cruise", runId);
+  const runDir = join(repoRoot, ".grokgoblin", spec.kind, runId);
   mkdirSync(runDir, { recursive: true });
   const logPath = join(runDir, "log.jsonl");
   const progressPath = join(runDir, "progress.md");
-  writeFileSync(join(runDir, "goal.md"), `# Cruise goal\n\n${goal}\n`, "utf-8");
+  writeFileSync(join(runDir, "goal.md"), `# ${spec.title} goal\n\n${goal}\n`, "utf-8");
   writeFileSync(progressPath, "", "utf-8");
 
-  header("GrokGoblin Cruise");
+  header(`GrokGoblin ${spec.title}`);
   print(`${dim("goal:")}  ${goal}`);
   print(`${dim("model:")} ${model ?? "(grok default)"}`);
   print(`${dim("max:")}   ${maxIterations} iterations`);
@@ -106,7 +193,12 @@ export async function runCruise(
     const progressSoFar = existsSync(progressPath)
       ? readFileSync(progressPath, "utf-8")
       : "";
-    const prompt = buildIterationPrompt(goal, i, maxIterations, tail(progressSoFar, 6000));
+    const prompt = spec.buildPrompt({
+      goal,
+      iteration: i,
+      maxIterations,
+      progressSoFar: tail(progressSoFar, 6000),
+    });
 
     const result = spawnGrokHeadless(
       prompt,
@@ -134,16 +226,12 @@ export async function runCruise(
     }
 
     const summary = stripSentinels(output);
-    appendFileSync(
-      progressPath,
-      `\n## Iteration ${i}\n${summary.trim()}\n`,
-      "utf-8"
-    );
+    appendFileSync(progressPath, `\n## Iteration ${i}\n${summary.trim()}\n`, "utf-8");
 
     // Show a compact view of what happened this iteration.
     print(dim(indent(tail(summary, 800))));
 
-    if (output.includes(COMPLETE_SENTINEL)) {
+    if (isComplete(output)) {
       completed = true;
       ok(`Goal reported complete after ${i} iteration(s).`);
       break;
@@ -153,12 +241,40 @@ export async function runCruise(
 
   print("");
   if (completed) {
-    ok("Cruise finished: goal complete.");
+    ok(`${spec.title} finished: goal complete.`);
   } else {
-    warn(`Cruise stopped after ${maxIterations} iteration(s) without a ${COMPLETE_SENTINEL} signal.`);
+    warn(`${spec.title} stopped after ${maxIterations} iteration(s) without a ${COMPLETE_SENTINEL} signal.`);
     print(dim(`Review progress: ${progressPath}`));
   }
   print(dim(`Full log: ${logPath}`));
+}
+
+export async function runCruise(cwd: string, goal: string, options: LoopOptions = {}): Promise<void> {
+  return runLoop(cwd, goal, {
+    kind: "cruise",
+    title: "Cruise",
+    buildPrompt: buildCruisePrompt,
+  }, options);
+}
+
+export async function runQuest(cwd: string, goal: string, options: LoopOptions = {}): Promise<void> {
+  return runLoop(cwd, goal, {
+    kind: "quest",
+    title: "Quest",
+    buildPrompt: buildQuestPrompt,
+  }, options);
+}
+
+export async function runRalph(cwd: string, goal: string, options: LoopOptions = {}): Promise<void> {
+  return runLoop(cwd, goal, {
+    kind: "ralph",
+    title: "Ralph",
+    buildPrompt: buildRalphPrompt,
+  }, options);
+}
+
+function isComplete(output: string): boolean {
+  return output.includes(COMPLETE_SENTINEL) || output.includes(LEGACY_COMPLETE);
 }
 
 function tail(text: string, maxChars: number): string {
@@ -171,7 +287,7 @@ function stripSentinels(text: string): string {
     .split("\n")
     .filter((line) => {
       const t = line.trim();
-      return t !== COMPLETE_SENTINEL && t !== CONTINUE_SENTINEL;
+      return t !== COMPLETE_SENTINEL && t !== CONTINUE_SENTINEL && t !== LEGACY_COMPLETE;
     })
     .join("\n");
 }

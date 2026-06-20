@@ -1,10 +1,10 @@
-# /deep-interview
+# /dig
 
 Structured requirements clarification before implementing anything complex.
 
 ## When to use
 
-Use `/deep-interview` when:
+Use `/dig` when:
 - Requirements are ambiguous, incomplete, or have multiple valid interpretations
 - Non-goals need to be explicitly defined to prevent scope creep
 - Stakeholder intent is unclear
@@ -44,7 +44,7 @@ End with: "Scope confirmed. Ready to move to `/goblinplan` with this scope."
 
 ## State
 
-Writes to `.grokgoblin/state/deep-interview-state.json`:
+Writes to `.grokgoblin/state/dig-state.json`:
 ```json
 {
   "active": true,
@@ -57,6 +57,6 @@ Writes to `.grokgoblin/state/deep-interview-state.json`:
 
 ## Rules
 
-- Never skip directly to implementation from deep-interview
+- Never skip directly to implementation from dig
 - If the user says "just do it" — acknowledge, then ask the 1-2 most critical questions anyway
 - If scope is already clear (e.g., "fix the typo in README"), say so and skip to action

@@ -32,10 +32,10 @@ import { ensureDir } from "../utils/toml.js";
 import { writeFileSync, readFileSync } from "fs";
 
 const BUILTIN_SKILLS = [
-  "deep-interview",
+  "dig",
   "goblinplan",
   "ralph",
-  "supragoal",
+  "quest",
   "cruise",
   "code-review",
   "tdd",
@@ -160,7 +160,7 @@ export async function runSetup(
   print(`  3. Launch with ${dim("gg")} from your project directory`);
   print("");
   print("In a Grok session, start with:");
-  print(`  ${dim("/deep-interview")} — clarify scope`);
+  print(`  ${dim("/dig")} — clarify scope`);
   print(`  ${dim("/goblinplan")} — create a plan`);
   print(`  ${dim("/ralph")} — persistent completion loop`);
   print("");

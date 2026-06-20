@@ -73,7 +73,7 @@ Produce a numbered, checkboxed plan:
 End with:
 ```
 Plan ready. Review above and confirm with:
-- "approved" — proceed to /ralph or /supragoal
+- "approved" — proceed to /ralph or /quest
 - "revise: [feedback]" — I'll update the plan
 ```
 
