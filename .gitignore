@@ -9,6 +9,8 @@ dist/
 
 # Local-only verification notes (not shipped)
 TEST_REPORT.md
+PROOF.md
+proof.md
 
 # Secrets & credentials — never commit (defensive)
 .env
