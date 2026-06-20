@@ -86,6 +86,21 @@ GrokGoblin turns on grok's **native cross-session memory** — persistent, query
 | `gg config model <frontier\|fast>` | Switch the default model. |
 | `gg list [skills\|agents\|cruise\|sessions]` | List installed/tracked items. |
 
+### Worktrees (isolated workspaces)
+Worktrees let grok work on a task on its own branch without touching your main checkout. GrokGoblin makes them first-class — smart auto-naming, one-command cleanup, and clear isolation messaging — so they're not just a flag you have to remember.
+
+| Command | Description |
+|---|---|
+| `gg -w` | Launch grok in a **fresh isolated worktree** with an auto-generated goblin name (e.g. `gg/scrappy-6791`). |
+| `gg -w feature-x` | Launch in a named worktree (`gg/feature-x`). |
+| `gg worktree` | List worktrees with status (clean/dirty/ahead), age, branch and path. |
+| `gg worktree new [name]` | Create a worktree (smart name if omitted). |
+| `gg worktree rm <name>` | Remove a worktree (`--force` if dirty, `--branch` to also delete the branch). |
+| `gg worktree clean` | Prune **merged, clean** worktrees in one go (`--all` for unmerged, `--force` for dirty). |
+| `gg worktree path <name>` | Print a worktree's path — `cd "$(gg worktree path <name>)"`. |
+
+Worktrees live in a sibling `…/<repo>.gg-worktrees/<name>` directory (so your main checkout stays clean) and all use the `gg/` branch prefix. Because grok's native memory is keyed by git remote, worktrees **share project memory** with the main checkout.
+
 ### Management
 | Command | Description |
 |---|---|
@@ -95,7 +110,7 @@ GrokGoblin turns on grok's **native cross-session memory** — persistent, query
 | `gg update` · `gg uninstall` · `gg version` | Lifecycle. |
 
 ### Launch flags
-`--fast` (use `grok-composer-2.5-fast`) · `--madmax` (always-approve) · `--plan` (plan mode, headless) · `-w <branch>` (git worktree).
+`--fast` (use `grok-composer-2.5-fast`) · `--madmax` (always-approve) · `--plan` (plan mode, headless) · `-w [name]` (isolated git worktree — auto-named if no name given; see [Worktrees](#worktrees-isolated-workspaces)).
 
 ---
 

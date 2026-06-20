@@ -29,8 +29,13 @@ import {
   tmuxAttach,
   isGitRepo,
   gitRepoRoot,
-  gitWorktreeAdd,
 } from "../utils/exec.js";
+import {
+  createWorktree,
+  generateWorktreeName,
+  slugifyWorktreeName,
+} from "../utils/worktree.js";
+import { printIsolationBanner } from "./worktree.js";
 import { step, warn, info, print, dim, bold } from "../utils/print.js";
 import { ensureDir, readFileOrEmpty } from "../utils/toml.js";
 
@@ -125,17 +130,21 @@ async function prepareWorktree(
   }
 
   const repoRoot = gitRepoRoot(cwd) ?? cwd;
-  const branchName =
-    typeof worktree === "string" ? worktree : "gg-launch-detached";
-  const worktreePath = join(resolve(repoRoot, ".."), `${repoRoot.split("/").pop()}.grokgoblin-worktrees`, branchName.replace(/\//g, "-"));
+  // Smart default: a memorable goblin name instead of a fixed "detached" branch,
+  // so every `gg -w` launch gets its own clean, named workspace.
+  const name =
+    typeof worktree === "string" && worktree.trim()
+      ? slugifyWorktreeName(worktree)
+      : generateWorktreeName();
 
-  if (!existsSync(worktreePath)) {
-    step(`Creating worktree at ${worktreePath}...`);
-    mkdirSync(resolve(worktreePath, ".."), { recursive: true });
-    gitWorktreeAdd(repoRoot, worktreePath, branchName);
+  const res = createWorktree(repoRoot, name);
+  if (res.created) {
+    step(`Created isolated worktree "${res.name}"`);
+  } else {
+    info(`Reusing worktree "${res.name}"`);
   }
-
-  return worktreePath;
+  printIsolationBanner(res);
+  return res.path;
 }
 
 export async function runLaunch(

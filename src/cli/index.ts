@@ -29,6 +29,8 @@ type CliCommand =
   | "state"
   | "session"
   | "agents"
+  | "worktree"
+  | "wt"
   | "hud";
 
 interface ResolvedCliInvocation {
@@ -119,6 +121,8 @@ function resolveCliInvocation(argv: string[]): ResolvedCliInvocation {
     "state",
     "session",
     "agents",
+    "worktree",
+    "wt",
     "hud",
   ]);
 
@@ -140,7 +144,8 @@ function printHelp(): void {
   print("");
   print(bold("Launch (default):"));
   print("  gg                         Launch grok with GrokGoblin enhancement");
-  print("  gg -w feat/task            Launch in a git worktree");
+  print("  gg -w                      Launch in a fresh isolated worktree (auto-named)");
+  print("  gg -w feat/task            Launch in a named worktree");
   print("  gg --madmax                Launch with always-approve mode");
   print("  gg --high                  High reasoning effort (headless only)");
   print("  gg --fast                  Launch with grok-composer-2.5-fast model");
@@ -186,6 +191,12 @@ function printHelp(): void {
   print("  gg supragoal <goal>        Launch durable multi-goal workflow");
   print("  gg ralph <task>            Persistent completion loop");
   print("  gg goblins [N] <task>       Orchestrate N parallel grok subagents (--tmux for panes)");
+  print("");
+  print(bold("Worktrees (isolated workspaces):"));
+  print("  gg worktree                List worktrees (status, age, branch)");
+  print("  gg worktree new [name]     Create one (smart goblin name if omitted)");
+  print("  gg worktree rm <name>      Remove one (--force, --branch)");
+  print("  gg worktree clean          Remove merged, clean worktrees");
   print("");
   print(bold("Hooks:"));
   print("  gg hooks list              List registered hooks");
@@ -510,6 +521,13 @@ export async function main(argv: string[]): Promise<void> {
     case "team": {
       const { runTeam } = await import("./team.js");
       await runTeam(cwd, args, flags);
+      break;
+    }
+
+    case "worktree":
+    case "wt": {
+      const { runWorktree } = await import("./worktree.js");
+      await runWorktree(cwd, args, flags);
       break;
     }
 
