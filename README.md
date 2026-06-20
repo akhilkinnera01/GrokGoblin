@@ -1,86 +1,276 @@
 <p align="center">
-  <img src="assets/banner.jpg" alt="GrokGoblin — for Grok CLI" width="720">
+  <img src="assets/banner.jpg" alt="GrokGoblin — for the grok CLI" width="720">
 </p>
 
 <h1 align="center">GrokGoblin <code>(gg)</code></h1>
 
 <p align="center">
-  A multi-agent orchestration layer for the <a href="https://x.ai">xAI Grok CLI</a><br>
-  <em>structured workflows · real grok subagents · lifecycle hooks · durable autonomous execution</em>
+  A multi-agent orchestration layer for the <a href="https://x.ai">xAI grok CLI</a><br>
+  <em>structured workflows · native grok subagents · lifecycle hooks · durable autonomous execution · real-time web/X grounding</em>
+</p>
+
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="#quickstart-your-first-5-minutes">Quickstart</a> ·
+  <a href="#core-concepts">Concepts</a> ·
+  <a href="#command-reference">Commands</a> ·
+  <a href="#configuration">Config</a> ·
+  <a href="#troubleshooting--faq">Troubleshooting</a>
 </p>
 
 ---
 
-GrokGoblin wraps the `grok` CLI you already use and turns it into an opinionated, repeatable engineering workflow: clarify → plan → execute, with specialist roles, persistent loops, and an autonomous mode that keeps working until the job is done.
+## Table of contents
 
-It installs natively into grok — skills, hooks, agent roles, and `AGENTS.md` — so everything works inside ordinary `grok` sessions, not a separate runtime.
+- [What is GrokGoblin?](#what-is-grokgoblin)
+- [Requirements](#requirements)
+- [Install](#install)
+- [Quickstart: your first 5 minutes](#quickstart-your-first-5-minutes)
+- [Core concepts](#core-concepts)
+  - [The goblins (specialist subagents)](#the-goblins-specialist-subagents)
+  - [Skills (in-session `/` commands)](#skills-in-session--commands)
+  - [The orchestration brain (`AGENTS.md`)](#the-orchestration-brain-agentsmd)
+  - [Memory](#memory)
+  - [Worktrees](#worktrees)
+  - [Hooks](#hooks)
+- [Walkthroughs](#walkthroughs)
+- [Command reference](#command-reference)
+- [Flags reference](#flags-reference)
+- [Configuration](#configuration)
+- [Power features](#power-features)
+- [How it integrates with grok](#how-it-integrates-with-grok)
+- [Files & state layout](#files--state-layout)
+- [Troubleshooting & FAQ](#troubleshooting--faq)
+- [Updating & uninstalling](#updating--uninstalling)
+- [License](#license)
+
+---
+
+## What is GrokGoblin?
+
+GrokGoblin wraps the `grok` CLI you already use and turns it into an opinionated, repeatable engineering workflow: **clarify → plan → execute → verify**, with specialist roles, persistent loops, and an autonomous mode that keeps working until the job is actually done.
+
+It installs natively into grok — **skills, hooks, agent roles, and `AGENTS.md`** — so everything works inside ordinary `grok` sessions, not a separate runtime. There's no extra daemon, no separate model server, and no paid tier required.
+
+**Why use it**
+
+- **It finishes the job.** The autonomous loops (`ralph`, `quest`, `cruise`) re-invoke grok across turns and only stop on a *verified* completion — grok must run your build/tests and see them pass before it's allowed to declare done.
+- **It thinks in specialists.** Work is delegated to themed **goblins** (analyst, planner, debugger, reviewer, …) running in parallel.
+- **It uses grok's real strengths.** Live **web/X grounding**, big context (512K on `grok-build`), speed routing to the fast model, and grok's native cross-session **memory**.
+- **It stays out of your way.** A small, deliberate set of `/` commands — no command sprawl.
 
 ---
 
 ## Requirements
 
-- [grok CLI](https://x.ai) `0.2.x` installed and signed in (`grok login`) — no SuperGrok/paid tier required.
-- Node.js `>= 20`.
+- **[grok CLI](https://x.ai)** `0.2.x`, installed and signed in (`grok login`). No SuperGrok / paid tier required.
+- **Node.js** `>= 20`.
+- *(optional)* **tmux** — only for the visual multi-pane modes. GrokGoblin auto-detects it and falls back gracefully if it's missing.
+
+---
 
 ## Install
 
 ```bash
 git clone https://github.com/akhilkinnera/grokgoblin
 cd grokgoblin
-npm install
-npm run build
-npm install -g .      # provides `gg` and `grokgoblin`
-gg setup              # installs skills, hooks, roles & AGENTS.md into ~/.grok
-gg doctor             # verify the install
+npm install            # builds automatically (prepare step)
+npm install -g .       # provides the `gg` and `grokgoblin` commands
+gg setup               # installs skills, hooks, roles & AGENTS.md into ~/.grok
+gg doctor              # verify the install (should be all green)
 ```
 
-> **Heads up:** if you use oh-my-zsh, `gg` is aliased to `git gui citool`. Either remove that alias or use the `grokgoblin` command. GrokGoblin's own hooks always call `grokgoblin` so they can never be shadowed.
+> **Heads-up on the `gg` name:** if you use oh-my-zsh, `gg` is aliased to `git gui citool`. Either remove that alias, or just use the full `grokgoblin` command — they're identical. GrokGoblin's own hooks always call `grokgoblin`, so they can never be shadowed.
 
-## Quickstart
+To verify end-to-end against grok:
 
 ```bash
-gg                      # launch grok with the GrokGoblin brain loaded
-gg ask "what does this regex do?"      # one-shot question, no repo needed
-gg explore "how does auth flow work"   # read-only investigation (cannot edit)
-gg cruise "make all tests pass"        # autonomous loop until the goal is done
-gg config model fast                   # set the default grok model
+gg exec --check        # grok should stream back: GrokGoblin-EXEC-OK
 ```
 
 ---
 
-## Commands
+## Quickstart: your first 5 minutes
+
+```bash
+gg                                  # launch grok with the GrokGoblin brain loaded
+gg ask "what does this regex do?"   # one-shot question, no repo needed
+gg explore "how does auth work"     # read-only investigation (cannot edit files)
+gg forage "best Rust web frameworks in 2026"   # read-only research + live web/X
+gg ralph "make the failing tests pass"         # autonomous loop until verified done
+gg goblins 3 "review this module for bugs"      # parallel specialist goblins
+gg -w                               # launch in a fresh isolated git worktree
+```
+
+Inside a `grok` session you also get the GrokGoblin skills as slash commands:
+
+```
+/dig          → clarify scope before building
+/goblinplan   → turn scope into an architecture + plan
+/quest        → execute as checkpointed goals
+/tdd          → test-driven flow
+/code-review  → structured review
+/cruise       → run the whole pipeline end-to-end
+```
+
+---
+
+## Core concepts
+
+### The goblins (specialist subagents)
+
+GrokGoblin installs **10 specialist roles** as real grok subagents. The leader delegates independent work to them (in parallel where possible) and synthesizes the results. Read-only goblins are capability-locked so they physically cannot modify files.
+
+| Goblin | Specialty | | Goblin | Specialty |
+|---|---|---|---|---|
+| **sniffer** | analyze code & requirements *(read-only)* | | **nitpick** | code review *(read-only)* |
+| **schemer** | planning | | **warden** | security review *(read-only)* |
+| **tinker** | architecture / design | | **forager** | research *(read-only)* |
+| **basher** | implementation | | **prover** | verification / tests |
+| **squasher** | debugging | | **grunt** | fast parallel worker |
+
+Inspect them with `gg agents list`.
+
+> **How parallelism runs:** grok's in-session subagent spawning is reliably invocable in the interactive TUI. The default **headless** `gg goblins` registers the roster (via grok's `--agents`) and spawns native subagents when the runtime allows; otherwise the leader runs the specialist passes itself, in parallel. Either way you get independent specialist passes synthesized into one result. For guaranteed multi-process parallelism, add `--tmux` (one real grok process per pane).
+
+### Skills (in-session `/` commands)
+
+A deliberately small set — invoke them inside a `grok` session with `/<name>`:
+
+| Skill | Use it to… |
+|---|---|
+| `/dig` | clarify scope, requirements and explicit non-goals |
+| `/goblinplan` | turn clarified scope into an architecture + step plan (with real-time grounding) |
+| `/quest` | execute a large task as discrete, checkpointed goals |
+| `/ralph` | persistently complete a single task with reflection |
+| `/cruise` | run the full pipeline: **dig → goblinplan → quest → tdd → code-review** |
+| `/tdd` | test-driven development flow |
+| `/code-review` | comprehensive code / PR review |
+| `/goblins` | coordinate parallel specialist goblins |
+
+### The orchestration brain (`AGENTS.md`)
+
+On `gg setup`, GrokGoblin writes an **orchestration brain** into `~/.grok/AGENTS.md` (appended to grok's system prompt). It tells grok how to use the goblins, when to recall memory, to ground in real-time web/X, and — crucially — that **verification is not optional**.
+
+Each time you launch with `gg`, a per-session **runtime overlay** (codebase map, active workflow modes, project-memory digest, notepad) is injected directly into `AGENTS.md` and stripped on exit — so grok always has fresh context, reliably, without depending on hooks.
+
+### Memory
+
+GrokGoblin turns on grok's **native cross-session memory** — persistent, queryable project memory (Markdown under `~/.grok/memory/`, indexed in SQLite with hybrid FTS5 keyword + vector search), keyed per project by git remote so clones and worktrees share it. It's auto-injected on the first turn and after compaction, and grok can recall it mid-session via `memory_search`.
+
+On top of that, every autonomous run writes a concise **digest** (goal, status, outcome) to `.grokgoblin/memory/project.md`, which the launch overlay injects next session — so GrokGoblin remembers what your last run accomplished.
+
+```bash
+gg memory                 # status + per-project stores
+gg memory search "<q>"    # query cross-session memory
+gg memory on | off        # toggle persistence
+gg memory path            # where memory is stored
+gg memory edit            # edit the global memory file
+gg memory clear           # clear this workspace's memory
+```
+
+### Worktrees
+
+Worktrees let grok work on a task on its own branch without touching your main checkout. GrokGoblin makes them first-class — smart auto-naming, one-command cleanup, and clear isolation messaging.
+
+```bash
+gg -w                        # launch in a fresh isolated worktree (auto goblin name, e.g. gg/scrappy-6791)
+gg -w feature-x              # launch in a named worktree (gg/feature-x)
+gg worktree                  # list worktrees (status, age, branch, path)
+gg worktree new [name]       # create one (smart name if omitted)
+gg worktree rm <name>        # remove (--force if dirty, --branch to also delete the branch)
+gg worktree clean            # prune merged, clean worktrees (--all, --force)
+gg worktree path <name>      # print path → cd "$(gg worktree path <name>)"
+```
+
+Worktrees live in a sibling `…/<repo>.gg-worktrees/<name>` directory (your main checkout stays clean), all branches use the `gg/` prefix, and because grok's memory is keyed by git remote, they **share project memory** with the main checkout.
+
+### Hooks
+
+`gg setup` installs lifecycle hooks into `~/.grok/hooks/hooks.json` (Claude-Code schema). They fire on grok's tool/session lifecycle in interactive sessions and log to `.grokgoblin/logs/`. Hooks are an enhancement — GrokGoblin's headless flows don't depend on them, and the runtime overlay is delivered via `AGENTS.md` at launch regardless.
+
+---
+
+## Walkthroughs
+
+**Ask a quick question (no repo needed)**
+```bash
+gg ask "difference between rebase and merge?"
+```
+
+**Investigate a codebase without risk (read-only)**
+```bash
+gg explore "where is rate limiting implemented?"
+```
+`explore` is restricted to read/search tools — grok literally has no write tool, so it cannot modify anything.
+
+**Research with live web + X grounding**
+```bash
+gg forage "current best practices for JWT rotation" --facets 3
+```
+Fans out parallel `forager` goblins, grounds in **today's** web/X sources with citations, and saves a report to `.grokgoblin/forage/`.
+
+**Plan, then build**
+```bash
+gg                       # then inside grok:
+/dig         "add OAuth login"      # clarify
+/goblinplan                          # architecture + plan
+/quest                               # execute as checkpoints
+```
+
+**Hands-off autonomous completion**
+```bash
+gg ralph  "fix the flaky test in auth.test.ts"          # one task, to completion
+gg quest  "migrate the API from v1 to v2"               # multi-goal, checkpointed
+gg cruise "add a /health endpoint with tests"           # full pipeline
+```
+All three loop until grok reports a **verified** completion (it must run the build/tests first) or hit the iteration cap. Durable state lands under `.grokgoblin/<kind>/`. Add `--best-of 3` for higher quality, `--fast` for speed, `--max-iterations N` to bound the run.
+
+**Parallel specialist review**
+```bash
+gg goblins 3 "audit this service for security and edge cases"
+gg goblins 2:warden "threat-model the payment flow"      # bias toward a role
+gg goblins --tmux 4 "refactor across these modules"      # visual multi-pane
+```
+
+---
+
+## Command reference
 
 ### Execution
 | Command | Description |
 |---|---|
 | `gg` | Launch grok interactively with the GrokGoblin orchestration layer. |
 | `gg ask <question>` | Quick one-shot question — headless, plain output, no git repo required. |
-| `gg explore <topic>` | Read-only investigation, restricted to read/search tools (cannot modify files). |
-| `gg forage <topic>` | Multi-facet **read-only** research — fans out parallel `forager` goblins, grounds in **live web/X**, and synthesizes a cited report (saved to `.grokgoblin/forage/`). |
+| `gg explore <topic>` | Read-only investigation (read/search tools only — cannot modify files). |
+| `gg forage <topic>` | Multi-facet **read-only** research with live web/X grounding; cited report saved to `.grokgoblin/forage/`. |
 | `gg exec <prompt>` | Run a headless grok task (streaming JSON by default). |
 | `gg exec --check` | Verify grok auth end-to-end. |
 
-### Workflows
-All three are **autonomous headless loops** — they re-invoke grok across multiple turns and only stop on a verified completion signal (or the iteration cap), so they don't quit after a single turn. Each enforces a **verification gate**: grok may only declare done after it has actually run the build/tests and they pass. Durable per-run state (goal, progress ledger, full log) lives under `.grokgoblin/<kind>/`.
-
+### Workflows (autonomous loops, verification-gated)
 | Command | Description |
 |---|---|
-| `gg cruise <goal>` | Full pipeline loop: **dig → goblinplan → quest → tdd → code-review**, driven to completion. |
-| `gg quest <goal>` | Durable multi-goal loop — decomposes the objective into checkpointed sub-goals and completes them one at a time. |
+| `gg cruise <goal>` | Full pipeline loop: **dig → goblinplan → quest → tdd → code-review**. |
+| `gg quest <goal>` | Durable multi-goal loop — decomposes into checkpointed sub-goals. |
 | `gg ralph <task>` | Persistent single-task completion loop. |
-| `gg goblins [N[:role]] <task>` | Orchestrate up to N parallel grok **subagents** ("goblins") on a task (one session, native `Task` tool). Add `--tmux` for the legacy multi-pane interactive mode. |
-
-Common flags: `--max-iterations <n>` (default 8) · `--fast` · `--model <id>` · `--skip-git-repo-check` · `--best-of <n>` (run each iteration N ways in parallel, keep the best).
+| `gg goblins [N[:role]] <task>` | Orchestrate up to N parallel specialist goblins (add `--tmux` for panes). |
 
 ### Memory
-GrokGoblin turns on grok's **native cross-session memory** — persistent, queryable project memory (Markdown under `~/.grok/memory/`, indexed in SQLite with hybrid FTS5 keyword + vector search), keyed per project by git remote so clones/worktrees share it. It's auto-injected on the first turn and after compaction, and the agent can recall it mid-session via `memory_search`.
-
 | Command | Description |
 |---|---|
-| `gg memory` | Show memory status and per-project stores. |
+| `gg memory [status]` | Show memory status and per-project stores. |
 | `gg memory search "<q>"` | Query cross-session memory. |
 | `gg memory on` / `off` | Toggle persistence. |
-| `gg memory edit` / `clear` | Edit global memory / clear workspace memory. |
+| `gg memory path` / `edit` / `clear` | Locate / edit global / clear workspace memory. |
+
+### Worktrees
+| Command | Description |
+|---|---|
+| `gg worktree` | List worktrees (status, age, branch, path). |
+| `gg worktree new [name]` | Create one (smart name if omitted). |
+| `gg worktree rm <name>` | Remove (`--force`, `--branch`). |
+| `gg worktree clean` | Prune merged, clean worktrees (`--all`, `--force`). |
+| `gg worktree path <name>` | Print a worktree's path. |
 
 ### Config & discovery
 | Command | Description |
@@ -88,70 +278,169 @@ GrokGoblin turns on grok's **native cross-session memory** — persistent, query
 | `gg config` | Show GrokGoblin-managed grok settings. |
 | `gg config get/set <key> [val]` | Read/write `config.toml` values (e.g. `models.default`). |
 | `gg config model <frontier\|fast>` | Switch the default model. |
-| `gg list [skills\|agents\|cruise\|sessions]` | List installed/tracked items. |
-
-### Worktrees (isolated workspaces)
-Worktrees let grok work on a task on its own branch without touching your main checkout. GrokGoblin makes them first-class — smart auto-naming, one-command cleanup, and clear isolation messaging — so they're not just a flag you have to remember.
-
-| Command | Description |
-|---|---|
-| `gg -w` | Launch grok in a **fresh isolated worktree** with an auto-generated goblin name (e.g. `gg/scrappy-6791`). |
-| `gg -w feature-x` | Launch in a named worktree (`gg/feature-x`). |
-| `gg worktree` | List worktrees with status (clean/dirty/ahead), age, branch and path. |
-| `gg worktree new [name]` | Create a worktree (smart name if omitted). |
-| `gg worktree rm <name>` | Remove a worktree (`--force` if dirty, `--branch` to also delete the branch). |
-| `gg worktree clean` | Prune **merged, clean** worktrees in one go (`--all` for unmerged, `--force` for dirty). |
-| `gg worktree path <name>` | Print a worktree's path — `cd "$(gg worktree path <name>)"`. |
-
-Worktrees live in a sibling `…/<repo>.gg-worktrees/<name>` directory (so your main checkout stays clean) and all use the `gg/` branch prefix. Because grok's native memory is keyed by git remote, worktrees **share project memory** with the main checkout.
+| `gg list [skills\|agents\|cruise\|sessions\|all]` | List installed/tracked items. |
+| `gg skills [list\|info <name>\|refresh]` | Inspect installed skills. |
+| `gg agents list` | List the goblin roster. |
+| `gg session` · `gg state list` | Inspect session / workflow state. |
 
 ### Management
 | Command | Description |
 |---|---|
-| `gg setup` | Install skills, hooks, agent roles & `AGENTS.md` into `~/.grok`. |
-| `gg doctor` | Diagnose the install and grok integration. |
-| `gg skills` · `gg hooks` · `gg agents` | Inspect installed components. |
+| `gg setup` | Install skills, hooks, roles & `AGENTS.md` into `~/.grok` (`--force` to overwrite, `--scope project`). |
+| `gg doctor` | Diagnose the install and grok integration (`--verbose`, `--team`). |
+| `gg hooks list` | List registered hooks. |
 | `gg update` · `gg uninstall` · `gg version` | Lifecycle. |
 
-### Launch flags
-`--fast` (use `grok-composer-2.5-fast`) · `--berserk` (always-approve, no prompts) · `--plan` (plan mode, headless) · `-w [name]` (isolated git worktree — auto-named if no name given; see [Worktrees](#worktrees-isolated-workspaces)).
+---
+
+## Flags reference
+
+**Launch (`gg …`)**
+
+| Flag | Effect |
+|---|---|
+| `-w [name]` | Launch in an isolated git worktree (auto-named if no name). |
+| `--fast` | Use `grok-composer-2.5-fast`. |
+| `--berserk` | Always-approve mode — no permission prompts (alias: `--yolo`). |
+| `--plan` | Plan mode (headless). |
+| `--direct` / `--tmux` | Force direct launch / detached tmux session. |
+| `-m, --model <id>` | Use a specific model id. |
+
+**Workflow loops (`cruise` / `quest` / `ralph`)**
+
+| Flag | Effect |
+|---|---|
+| `--max-iterations <n>` | Iteration cap (default 8). |
+| `--best-of <n>` | Run each iteration N ways in parallel, keep the best. |
+| `--fast` / `--model <id>` | Model selection. |
+| `--skip-git-repo-check` | Run outside a git repo. |
+| `--no-digest` | Don't write the end-of-run memory digest. |
+
+---
+
+## Configuration
+
+GrokGoblin manages real `config.toml` keys in `~/.grok` — it never invents settings.
+
+```bash
+gg config                              # show managed settings
+gg config get models.default          # read a value
+gg config set models.default grok-build
+gg config model fast                  # convenience: switch to grok-composer-2.5-fast
+```
+
+**Models**
+
+| Model | Role | Context window |
+|---|---|---|
+| `grok-build` | frontier / leader (default) | **512K tokens** |
+| `grok-composer-2.5-fast` | fast worker | **200K tokens** |
+
+A new grok model id passes straight through — there's no hard-coded allowlist gating execution, so the wrapper keeps working the day xAI ships a new model.
+
+**Environment variables**
+
+| Var | Purpose |
+|---|---|
+| `XAI_API_KEY` | xAI API key (optional — `grok login` session auth also works). |
+| `GROK_HOME` | Override `~/.grok`. |
+| `GG_ROOT` | Override the `.grokgoblin/` state dir. |
+| `GROK_BIN` | Override the `grok` binary path. |
+| `GG_LAUNCH_POLICY` | `direct` \| `tmux` \| `detached-tmux` \| `auto`. |
+
+---
+
+## Power features
+
+GrokGoblin quietly wires up some of grok's most useful but lesser-known capabilities:
+
+- **Big context, used well.** `grok-build` gives a **512K** window. The model window is the ceiling — but the autonomous loops run with **`--compaction-mode segments`**, which persists compacted history as grep-able markdown so a long run can recover earlier detail instead of losing it. Combined with native memory, effective recall stretches well past any single window.
+- **Best-of-N quality.** `--best-of <n>` runs the work **N ways in parallel and keeps the best** (`grok --best-of-n`, headless only). Spend more compute when correctness matters.
+- **Real-time grounding.** GrokGoblin never restricts grok's web tools on its main flows, and the brain + skills tell grok to proactively `web_search` / X-search for current versions, APIs and best practices — with citations.
+- **Future-model safe.** No model allowlist gates execution, and `--effort` is only sent to models known to support it, so it can never `400` your session.
+
+> ⚠️ **Reasoning effort:** the current grok models don't support a reasoning-effort parameter, so `--high` / `--effort` are accepted but no-op until grok ships an effort-capable model.
 
 ---
 
 ## How it integrates with grok
 
-GrokGoblin uses grok's own extension points, so there's no separate agent runtime:
+GrokGoblin uses grok's own extension points — there's no separate agent runtime:
 
-- **Goblin subagents** → GrokGoblin's specialist goblins are installed as **real grok subagents** (`config.toml [subagents.roles.*]` + per-role prompt files), and `gg goblins` also passes the full roster inline via grok's `--agents` so the `spawn_subagent` tool (alias `task`) is registered. Read-only goblins are capability-locked so they can't modify files. No SuperGrok/paid tier required.
+- **Goblin subagents** → installed as real grok subagents (`config.toml [subagents.roles.*]` + per-role prompt files), and `gg goblins` also passes the roster inline via `--agents` so the `spawn_subagent` tool is registered. Read-only goblins are capability-locked.
+- **Skills** → the `/` commands above, installed to `~/.grok/skills/`.
+- **Hooks** → `~/.grok/hooks/hooks.json` (Claude-Code schema), firing on grok's tool/session lifecycle.
+- **`AGENTS.md`** → the orchestration brain + per-session runtime overlay, appended to grok's system prompt.
+- **Config & memory** → real `config.toml` keys and grok's native cross-session memory.
 
-  > **How parallelism actually runs:** grok's in-session subagent spawning is only reliably invocable in the interactive TUI. In the default **headless** `gg goblins` path the leader spawns native subagents when the runtime allows and otherwise runs the specialist passes **in parallel itself** (concurrent tool calls) — either way you get independent specialist passes synthesized into one result. For guaranteed multi-process parallelism, use `gg goblins --tmux` (one real grok process per pane).
+---
 
-  | Goblin | Specialty | Goblin | Specialty |
-  |---|---|---|---|
-  | **sniffer** | analyze code & requirements | **nitpick** | code review |
-  | **schemer** | planning | **warden** | security review |
-  | **tinker** | architecture/design | **forager** | research (read-only) |
-  | **basher** | implementation | **prover** | verification/tests |
-  | **squasher** | debugging | **grunt** | parallel worker |
+## Files & state layout
 
-- **Skills** → a deliberately small set of `/` commands (no command sprawl): `/goblinplan`, `/dig`, `/cruise`, `/quest`, `/ralph`, `/goblins`, `/code-review`, `/tdd`.
-- **Hooks** → installed to `~/.grok/hooks/hooks.json` (Claude-Code schema) and fire on grok's tool/session lifecycle.
-- **`AGENTS.md`** → the orchestration brain, appended to grok's system prompt. The per-session dynamic overlay (codebase map, active modes, notepad) is injected straight into `AGENTS.md` at launch and stripped on exit — so it's reliably loaded into the system prompt rather than depending on an async hook grok might never read.
-- **Config** → manages real `config.toml` keys (default model, compaction, permissions).
+**In your project (`.grokgoblin/`)** — safe to delete; gitignore it:
 
-> **Robust state:** workflow state files under `.grokgoblin/state/` are written atomically (temp + rename) and shape-validated on read — a malformed or partial write is quarantined to `*.corrupt` and treated as "no state" instead of crashing the next run.
+```
+.grokgoblin/
+├── state/            active workflow mode state
+├── logs/             hook & session logs
+├── plans/            planning artifacts
+├── memory/project.md cross-session digest (injected into AGENTS.md)
+├── forage/           saved research reports
+├── cruise/  quest/  ralph/   per-run state (goal.md, progress.md, log.jsonl)
+└── quest/<id>/ledger.jsonl   quest checkpoint ledger
+```
 
-Inspect roles with `gg agents` or `gg list agents`.
+**Globally (`~/.grok/`)** — managed by `gg setup`:
 
-> ⚠️ **Reasoning effort:** the currently available grok models (`grok-build`, `grok-composer-2.5-fast`) don't support a reasoning-effort parameter, so `--high`/`--effort` are accepted but no-op until grok ships an effort-capable model.
+```
+~/.grok/
+├── AGENTS.md         orchestration brain
+├── skills/           GrokGoblin skills
+├── prompts/gg-*.md   goblin role prompts
+├── hooks/hooks.json  lifecycle hooks
+├── config.toml       models, memory, permissions
+└── memory/           grok native cross-session memory
+```
 
-## Power features (grok gateways GrokGoblin leans on)
+Add this to your project's `.gitignore`:
 
-GrokGoblin quietly wires up some of grok's most useful but lesser-known capabilities:
+```gitignore
+.grokgoblin/
+```
 
-- **Big context, used well.** `grok-build` has a **512K-token** context window (the GrokGoblin leader/default); `grok-composer-2.5-fast` has **200K**. The model window is the ceiling — but the autonomous loops run grok with **`--compaction-mode segments`**, which persists compacted history as grep-able markdown so a long run can recover earlier detail instead of losing it. Combined with grok's native cross-session **memory**, effective recall stretches well past any single window.
-- **Best-of-N quality.** Pass `--best-of <n>` to `gg exec`, `cruise`, `quest`, or `ralph` to have grok run the work **N ways in parallel and keep the best** (`--best-of-n`, headless only). Spend more compute when correctness matters.
-- **Future-model safe.** No hard-coded model allowlist gates execution — a new grok model id passes straight through (`gg config set models.default <id>` or `gg --model <id>`), and `--effort` is only sent to models known to support it, so it can never `400` your session.
+---
+
+## Troubleshooting & FAQ
+
+**`gg` runs `git gui citool` instead of GrokGoblin.**
+oh-my-zsh aliases `gg`. Use `grokgoblin` instead, or `unalias gg`.
+
+**`gg doctor` shows failures.**
+Run `gg doctor --verbose` for fix commands. Most issues are resolved by `gg setup --force`. Make sure `grok` is on your PATH and you've run `grok login`.
+
+**Does it need a paid grok tier?**
+No. Everything (subagents, memory, hooks) works on the standard grok CLI.
+
+**`--high` / `--effort` seem to do nothing.**
+Correct — current grok models don't support reasoning effort. The flags are accepted but skipped so they can never break a session.
+
+**A `.serena/` folder keeps appearing — is that GrokGoblin?**
+No. That's the [serena](https://github.com/oraios/serena) MCP server (separate tooling). GrokGoblin has zero references to it. Delete it freely, or disable serena for the project in your MCP settings.
+
+**Will it break when xAI releases a new model?**
+No. Point at it with `gg config set models.default <new-id>` (or `gg --model <new-id>`) — there's no allowlist blocking unknown models.
+
+**The autonomous loop stopped before finishing.**
+It hit the iteration cap without a verified completion. Re-run with a higher `--max-iterations`, or review `.grokgoblin/<kind>/<id>/progress.md` to see where it got stuck.
+
+---
+
+## Updating & uninstalling
+
+```bash
+gg update       # pull latest + re-run setup
+gg uninstall    # remove GrokGoblin hooks, roles & config keys (skills/AGENTS.md kept)
+```
 
 ---
 
