@@ -39,23 +39,32 @@ export async function runAutoresearch(
   print("");
 
   const prompt = [
-    "You are the LEAD RESEARCHER. This is a READ-ONLY task: do NOT modify any files or run mutating commands.",
+    "You are the LEAD RESEARCHER. This is a READ-ONLY task: do NOT modify any files or run mutating commands. (Web search and X/Twitter search are read-only and ENCOURAGED — see Real-time grounding below.)",
     "",
     `## Research topic\n${topic}`,
     "",
     "## Method",
     `- Break the topic into up to ${facets} distinct facets/angles.`,
     "- Use the `task` tool to spawn parallel **researcher** subagents (one per facet). The researcher role is read-only.",
-    "- Each subagent should gather evidence (code, docs, structure) for its facet and report findings with concrete references (files, line numbers, snippets).",
+    "- Each subagent should gather evidence for its facet from BOTH the codebase (files, line numbers, snippets) AND, where relevant, current external sources.",
     "- Synthesize all findings into ONE structured report.",
+    "",
+    "## Real-time grounding (use grok's strengths)",
+    "- Proactively use `web_search`/`web_fetch` for anything fast-moving or external: current library/API versions, best practices, comparisons, recent changes, security advisories. Prefer today's sources over training memory.",
+    "- Use X/Twitter search for community signal, recent announcements, and real-world reports when the topic benefits.",
+    "- Cite every external claim with its source URL. Note the date of time-sensitive facts.",
+    "- For purely internal/codebase topics, grounding may be unnecessary — use judgement.",
     "",
     "## Report format",
     "1. **Summary** — the key answer in 3-5 sentences.",
-    "2. **Findings by facet** — what each subagent found, with file/line references.",
-    "3. **Open questions / risks** — gaps or uncertainties.",
+    "2. **Findings by facet** — what each subagent found, with file/line references and/or cited external sources.",
+    "3. **Sources** — external URLs used (with dates for time-sensitive facts).",
+    "4. **Open questions / risks** — gaps or uncertainties.",
   ].join("\n");
 
-  const grokArgs = ["--always-approve", "--output-format", "plain", "-m", model];
+  // No --tools restriction here: grok's native web_search/web_fetch/x_search stay
+  // available for real-time grounding. --experimental-memory lets it recall prior research.
+  const grokArgs = ["--always-approve", "--experimental-memory", "--output-format", "plain", "-m", model];
   const result = spawnGrokHeadless(
     prompt,
     grokArgs,
