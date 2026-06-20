@@ -31,6 +31,7 @@ import {
 } from "../utils/exec.js";
 import { ensureDir, writeJsonFile, readJsonFile } from "../utils/toml.js";
 import { ggSessionId } from "../utils/paths.js";
+import { leaderSocketArgs } from "../utils/leader.js";
 import { spawnSync } from "child_process";
 
 interface TeamWorkerConfig {
@@ -164,6 +165,9 @@ async function runTeamNative(
     "--agents", JSON.stringify(agentsMap),
     "--output-format", "plain",
     "-m", leaderModel,
+    // Isolate the leader by MCP-config fingerprint so the team run honors the
+    // current MCP servers instead of a stale leader's cached connections.
+    ...leaderSocketArgs(grokHome, cwd),
   ];
 
   const result = spawnGrokHeadless(
@@ -271,19 +275,26 @@ async function runTeamLaunch(
   writeJsonFile(join(teamStateDir, "state.json"), teamState);
 
   const leaderTmuxSession = `${teamName}-leader`;
-  const workerArgs = [
-    "-p",
-    `You are a grunt worker goblin. Complete this task end-to-end, then verify your work: ${task}`,
-    "-m",
-    fastModel,
-    "--output-format",
-    "streaming-json",
-  ];
+  // Same leader isolation as every other grok-spawning path, so unattended
+  // workers honor the current MCP config (see utils/leader.ts).
+  const leaderArgs = leaderSocketArgs(grokHome, cwd);
 
   step(`Starting ${workerCount} worker sessions...`);
 
   for (let i = 0; i < workerCount; i++) {
     const workerSessionName = `${teamName}-w${i + 1}`;
+    const workerArgs = [
+      "-p",
+      `You are a grunt worker goblin. Complete this task end-to-end, then verify your work: ${workers[i].task}`,
+      "-m",
+      fastModel,
+      "--output-format",
+      "streaming-json",
+      // Workers run unattended in their own tmux pane — auto-approve so they
+      // never stall waiting for an approval prompt no one is watching.
+      "--always-approve",
+      ...leaderArgs,
+    ];
     tmuxNewSession(workerSessionName, grokBin, workerArgs, cwd);
     ok(`  Worker ${i + 1}: ${workerSessionName}`);
     workers[i].status = "running";
