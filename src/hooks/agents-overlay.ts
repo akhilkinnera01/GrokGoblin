@@ -141,7 +141,7 @@ ${OVERLAY_END}
 
 ---
 
-*Powered by [grokgoblin](https://github.com/akhilkinnera/grokgoblin) — inspired by [oh-my-codex](https://github.com/Yeachan-Heo/oh-my-codex) by Yeachan Heo*
+*Powered by [GrokGoblin](https://github.com/akhilkinnera/grokgoblin) — native multi-agent orchestration for the grok CLI.*
 `;
 }
 

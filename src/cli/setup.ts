@@ -156,7 +156,7 @@ export async function runSetup(
   print(`  ${dim("/goblinplan")} — create a plan`);
   print(`  ${dim("/ralph")} — persistent completion loop`);
   print("");
-  print(dim("Inspired by oh-my-codex by Yeachan Heo (https://github.com/Yeachan-Heo/oh-my-codex)"));
+  print(dim("GrokGoblin — native multi-agent orchestration for the grok CLI."));
 }
 
 export async function runUninstall(cwd: string): Promise<void> {

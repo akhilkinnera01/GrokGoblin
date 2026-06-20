@@ -56,7 +56,7 @@ gg config model fast                   # set the default grok model
 | `gg` | Launch grok interactively with the GrokGoblin orchestration layer. |
 | `gg ask <question>` | Quick one-shot question — headless, plain output, no git repo required. |
 | `gg explore <topic>` | Read-only investigation, restricted to read/search tools (cannot modify files). |
-| `gg autoresearch <topic>` | Multi-facet **read-only** research — fans out parallel `researcher` subagents and synthesizes a structured report (saved to `.grokgoblin/research/`). |
+| `gg forage <topic>` | Multi-facet **read-only** research — fans out parallel `forager` goblins, grounds in **live web/X**, and synthesizes a cited report (saved to `.grokgoblin/forage/`). |
 | `gg exec <prompt>` | Run a headless grok task (streaming JSON by default). |
 | `gg exec --check` | Verify grok auth end-to-end. |
 
@@ -114,7 +114,7 @@ Worktrees live in a sibling `…/<repo>.gg-worktrees/<name>` directory (so your 
 | `gg update` · `gg uninstall` · `gg version` | Lifecycle. |
 
 ### Launch flags
-`--fast` (use `grok-composer-2.5-fast`) · `--madmax` (always-approve) · `--plan` (plan mode, headless) · `-w [name]` (isolated git worktree — auto-named if no name given; see [Worktrees](#worktrees-isolated-workspaces)).
+`--fast` (use `grok-composer-2.5-fast`) · `--berserk` (always-approve, no prompts) · `--plan` (plan mode, headless) · `-w [name]` (isolated git worktree — auto-named if no name given; see [Worktrees](#worktrees-isolated-workspaces)).
 
 ---
 
@@ -154,10 +154,6 @@ GrokGoblin quietly wires up some of grok's most useful but lesser-known capabili
 - **Future-model safe.** No hard-coded model allowlist gates execution — a new grok model id passes straight through (`gg config set models.default <id>` or `gg --model <id>`), and `--effort` is only sent to models known to support it, so it can never `400` your session.
 
 ---
-
-## Credits
-
-GrokGoblin is **inspired by [oh-my-codex (omx)](https://github.com/Yeachan-Heo/oh-my-codex) by Yeachan Heo**, which I use daily. GrokGoblin reimagines those ideas natively for the grok CLI.
 
 ## License
 

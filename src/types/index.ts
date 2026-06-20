@@ -122,7 +122,7 @@ export interface WorktreeOptions {
 
 export interface LaunchOptions {
   worktree?: string | boolean;
-  madmax?: boolean;
+  berserk?: boolean;
   yolo?: boolean;
   high?: boolean;
   xhigh?: boolean;

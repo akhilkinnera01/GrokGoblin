@@ -4,7 +4,7 @@ import { resolveGrokHome, resolveGgStateDir, DEFAULT_FRONTIER_MODEL } from "../u
 import { commandExists, spawnGrokHeadless } from "../utils/exec.js";
 import { print, header, ok, warn, dim } from "../utils/print.js";
 
-export interface AutoresearchOptions {
+export interface ForageOptions {
   facets?: number;
   model?: string;
   out?: string;
@@ -13,10 +13,10 @@ export interface AutoresearchOptions {
 // Read-only research workflow: a leader spawns parallel `researcher` subagents
 // (capability-locked to read-only) across facets of a topic, then synthesizes a
 // structured report. Nothing is modified — research only.
-export async function runAutoresearch(
+export async function runForage(
   cwd: string,
   topic: string,
-  options: AutoresearchOptions = {}
+  options: ForageOptions = {}
 ): Promise<void> {
   const grokBin = process.env["GROK_BIN"] ?? "grok";
   if (!commandExists(grokBin)) {
@@ -24,7 +24,7 @@ export async function runAutoresearch(
     process.exit(1);
   }
   if (!topic.trim()) {
-    warn('gg autoresearch requires a topic, e.g. `gg autoresearch "how is caching implemented"`');
+    warn('gg forage requires a topic, e.g. `gg forage "how is caching implemented"`');
     process.exit(1);
   }
 
@@ -32,7 +32,7 @@ export async function runAutoresearch(
   const model = options.model ?? DEFAULT_FRONTIER_MODEL;
   const grokHome = resolveGrokHome();
 
-  header("GrokGoblin Autoresearch");
+  header("GrokGoblin Forage");
   print(`${dim("topic:")}  ${topic}`);
   print(`${dim("facets:")} up to ${facets} parallel researcher subagents`);
   print(`${dim("mode:")}   read-only (no files modified)`);
@@ -79,7 +79,7 @@ export async function runAutoresearch(
   // Persist the report.
   const outPath = options.out
     ? (options.out.startsWith("/") ? options.out : join(cwd, options.out))
-    : join(resolveGgStateDir(cwd), "research", `${Date.now()}.md`);
+    : join(resolveGgStateDir(cwd), "forage", `${Date.now()}.md`);
   try {
     const dir = join(outPath, "..");
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });

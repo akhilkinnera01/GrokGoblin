@@ -12,7 +12,7 @@ type CliCommand =
   | "exec"
   | "ask"
   | "explore"
-  | "autoresearch"
+  | "forage"
   | "memory"
   | "list"
   | "cruise"
@@ -41,10 +41,10 @@ interface ResolvedCliInvocation {
 }
 
 // Flags that are always boolean — they must NEVER consume the following token as
-// their value, otherwise e.g. `gg exec --madmax "prompt"` would swallow the
+// their value, otherwise e.g. `gg exec --berserk "prompt"` would swallow the
 // prompt. Anything not listed here may take a value (`--model grok-build`).
 const BOOLEAN_FLAGS = new Set([
-  "madmax", "yolo", "high", "xhigh", "direct", "tmux", "fast", "plan", "ask",
+  "berserk", "yolo", "high", "xhigh", "direct", "tmux", "fast", "plan", "ask",
   "check", "force", "verbose", "team", "mcp", "skip-git-repo-check",
   "always-approve", "history", "branch", "all", "merged", "help", "version",
   "merge-agents", "continue", "no-subagents",
@@ -120,7 +120,7 @@ function resolveCliInvocation(argv: string[]): ResolvedCliInvocation {
     "exec",
     "ask",
     "explore",
-    "autoresearch",
+    "forage",
     "memory",
     "list",
     "cruise",
@@ -154,7 +154,7 @@ function resolveCliInvocation(argv: string[]): ResolvedCliInvocation {
 function printHelp(): void {
   header(`GrokGoblin (gg) v${GG_VERSION}`);
   print(dim("A multi-agent orchestration layer for the xAI Grok CLI"));
-  print(dim("Inspired by oh-my-codex (omx) by Yeachan Heo"));
+  print(dim("Native multi-agent orchestration for grok — built by akhilkinnera01"));
   print("");
   print(bold("Usage:"));
   print("  gg [command] [options]");
@@ -163,7 +163,7 @@ function printHelp(): void {
   print("  gg                         Launch grok with GrokGoblin enhancement");
   print("  gg -w                      Launch in a fresh isolated worktree (auto-named)");
   print("  gg -w feat/task            Launch in a named worktree");
-  print("  gg --madmax                Launch with always-approve mode");
+  print("  gg --berserk               Launch with always-approve mode (no prompts)");
   print("  gg --high                  High reasoning effort (headless only)");
   print("  gg --fast                  Launch with grok-composer-2.5-fast model");
   print("  gg --plan                  Launch in plan mode (headless only)");
@@ -188,7 +188,7 @@ function printHelp(): void {
   print(bold("Execution:"));
   print("  gg ask <question>          Quick one-shot question (no repo needed)");
   print("  gg explore <topic>         Read-only investigation (no edits)");
-  print("  gg autoresearch <topic>    Multi-facet read-only research (parallel subagents)");
+  print("  gg forage <topic>          Multi-facet read-only research (parallel goblins + live web/X)");
   print("  gg exec <prompt>           Run a headless grok task");
   print("  gg exec --check            Test grok authentication");
   print("  gg exec --effort high <p>  Headless task with high reasoning effort");
@@ -315,7 +315,7 @@ export async function main(argv: string[]): Promise<void> {
       const { runLaunch } = await import("./launch.js");
       const launchOptions: LaunchOptions = {
         worktree: flags["worktree"] as string | boolean | undefined,
-        madmax: Boolean(flags["madmax"]),
+        berserk: Boolean(flags["berserk"]),
         yolo: Boolean(flags["yolo"]),
         high: Boolean(flags["high"]),
         xhigh: Boolean(flags["xhigh"]),
@@ -424,10 +424,10 @@ export async function main(argv: string[]): Promise<void> {
       break;
     }
 
-    case "autoresearch": {
-      const { runAutoresearch } = await import("./autoresearch.js");
+    case "forage": {
+      const { runForage } = await import("./forage.js");
       const facetsRaw = flags["facets"] as string | undefined;
-      await runAutoresearch(cwd, args.join(" ").trim(), {
+      await runForage(cwd, args.join(" ").trim(), {
         facets: facetsRaw ? Number(facetsRaw) : undefined,
         model: flags["model"] as string | undefined,
         out: flags["out"] as string | undefined,
@@ -487,7 +487,7 @@ export async function main(argv: string[]): Promise<void> {
         outputFormat: flags["output-format"] as string | undefined,
         skipGitRepoCheck: Boolean(flags["skip-git-repo-check"]) || isCheck,
         effort: flags["effort"] as string | undefined,
-        madmax: Boolean(flags["madmax"]) || Boolean(flags["always-approve"]),
+        berserk: Boolean(flags["berserk"]) || Boolean(flags["always-approve"]),
         bestOf: flags["best-of"] ? Number(flags["best-of"]) : undefined,
       });
       break;

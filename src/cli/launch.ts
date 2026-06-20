@@ -110,7 +110,7 @@ function buildGrokArgs(options: LaunchOptions): string[] {
     args.push("-m", effectiveModel);
   }
 
-  if (options.madmax || options.yolo) {
+  if (options.berserk || options.yolo) {
     args.push("--always-approve");
   }
 
@@ -286,7 +286,7 @@ export async function runExec(
     outputFormat?: string;
     skipGitRepoCheck?: boolean;
     effort?: string;
-    madmax?: boolean;
+    berserk?: boolean;
     tools?: string;
     bestOf?: number;
   } = {}
@@ -327,7 +327,7 @@ export async function runExec(
     }
   }
 
-  if (options.madmax) {
+  if (options.berserk) {
     args.push("--always-approve");
   }
 
