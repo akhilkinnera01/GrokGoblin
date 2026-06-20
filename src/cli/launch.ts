@@ -288,6 +288,7 @@ export async function runExec(
     effort?: string;
     madmax?: boolean;
     tools?: string;
+    bestOf?: number;
   } = {}
 ): Promise<void> {
   const grokBin = process.env["GROK_BIN"] ?? "grok";
@@ -333,6 +334,11 @@ export async function runExec(
   // Restrict the toolset (headless only) — used by `gg explore` for read-only runs.
   if (options.tools) {
     args.push("--tools", options.tools);
+  }
+
+  // --best-of-n: run the task N ways in parallel and keep the best (headless only).
+  if (options.bestOf && options.bestOf > 1) {
+    args.push("--best-of-n", String(options.bestOf));
   }
 
   const result = spawnSync(grokBin, args, {

@@ -27,6 +27,8 @@ export interface LoopOptions {
   model?: string;
   fast?: boolean;
   skipGitRepoCheck?: boolean;
+  /** grok --best-of-n: run each iteration N ways in parallel and keep the best. */
+  bestOf?: number;
 }
 
 // Back-compat alias for the previous public name.
@@ -185,7 +187,14 @@ async function runLoop(
   print("");
 
   const grokArgs = ["--always-approve", "--experimental-memory", "--output-format", "plain"];
+  // segments compaction persists compacted history as grep-able markdown, so a
+  // long iteration can recover earlier detail instead of losing it to the window.
+  grokArgs.push("--compaction-mode", "segments");
   if (model) grokArgs.push("-m", model);
+  // --best-of-n runs the turn N ways in parallel and keeps the best (headless only).
+  if (options.bestOf && options.bestOf > 1) {
+    grokArgs.push("--best-of-n", String(options.bestOf));
+  }
 
   let completed = false;
   for (let i = 1; i <= maxIterations; i++) {

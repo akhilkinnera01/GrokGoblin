@@ -70,7 +70,7 @@ All three are **autonomous headless loops** — they re-invoke grok across multi
 | `gg ralph <task>` | Persistent single-task completion loop. |
 | `gg goblins [N[:role]] <task>` | Orchestrate up to N parallel grok **subagents** ("goblins") on a task (one session, native `Task` tool). Add `--tmux` for the legacy multi-pane interactive mode. |
 
-Common flags: `--max-iterations <n>` (default 8) · `--fast` · `--model <id>` · `--skip-git-repo-check`.
+Common flags: `--max-iterations <n>` (default 8) · `--fast` · `--model <id>` · `--skip-git-repo-check` · `--best-of <n>` (run each iteration N ways in parallel, keep the best).
 
 ### Memory
 GrokGoblin turns on grok's **native cross-session memory** — persistent, queryable project memory (Markdown under `~/.grok/memory/`, indexed in SQLite with hybrid FTS5 keyword + vector search), keyed per project by git remote so clones/worktrees share it. It's auto-injected on the first turn and after compaction, and the agent can recall it mid-session via `memory_search`.
@@ -144,6 +144,14 @@ GrokGoblin uses grok's own extension points, so there's no separate agent runtim
 Inspect roles with `gg agents` or `gg list agents`.
 
 > ⚠️ **Reasoning effort:** the currently available grok models (`grok-build`, `grok-composer-2.5-fast`) don't support a reasoning-effort parameter, so `--high`/`--effort` are accepted but no-op until grok ships an effort-capable model.
+
+## Power features (grok gateways GrokGoblin leans on)
+
+GrokGoblin quietly wires up some of grok's most useful but lesser-known capabilities:
+
+- **Big context, used well.** `grok-build` has a **512K-token** context window (the GrokGoblin leader/default); `grok-composer-2.5-fast` has **200K**. The model window is the ceiling — but the autonomous loops run grok with **`--compaction-mode segments`**, which persists compacted history as grep-able markdown so a long run can recover earlier detail instead of losing it. Combined with grok's native cross-session **memory**, effective recall stretches well past any single window.
+- **Best-of-N quality.** Pass `--best-of <n>` to `gg exec`, `cruise`, `quest`, or `ralph` to have grok run the work **N ways in parallel and keep the best** (`--best-of-n`, headless only). Spend more compute when correctness matters.
+- **Future-model safe.** No hard-coded model allowlist gates execution — a new grok model id passes straight through (`gg config set models.default <id>` or `gg --model <id>`), and `--effort` is only sent to models known to support it, so it can never `400` your session.
 
 ---
 

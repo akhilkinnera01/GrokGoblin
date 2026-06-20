@@ -208,6 +208,7 @@ function printHelp(): void {
   print("  gg quest <goal>            Durable multi-goal loop with checkpoints");
   print("  gg ralph <task>            Persistent single-task completion loop");
   print("  gg goblins [N] <task>       Orchestrate N parallel grok subagents (--tmux for panes)");
+  print(dim("  loop flags: --max-iterations <n> --fast --model <id> --best-of <n> --skip-git-repo-check"));
   print("");
   print(bold("Worktrees (isolated workspaces):"));
   print("  gg worktree                List worktrees (status, age, branch)");
@@ -444,6 +445,7 @@ export async function main(argv: string[]): Promise<void> {
         model: flags["model"] as string | undefined,
         fast: Boolean(flags["fast"]),
         skipGitRepoCheck: Boolean(flags["skip-git-repo-check"]),
+        bestOf: flags["best-of"] ? Number(flags["best-of"]) : undefined,
       });
       break;
     }
@@ -461,6 +463,7 @@ export async function main(argv: string[]): Promise<void> {
         model: flags["model"] as string | undefined,
         fast: Boolean(flags["fast"]),
         skipGitRepoCheck: Boolean(flags["skip-git-repo-check"]),
+        bestOf: flags["best-of"] ? Number(flags["best-of"]) : undefined,
       });
       break;
     }
@@ -485,6 +488,7 @@ export async function main(argv: string[]): Promise<void> {
         skipGitRepoCheck: Boolean(flags["skip-git-repo-check"]) || isCheck,
         effort: flags["effort"] as string | undefined,
         madmax: Boolean(flags["madmax"]) || Boolean(flags["always-approve"]),
+        bestOf: flags["best-of"] ? Number(flags["best-of"]) : undefined,
       });
       break;
     }
@@ -579,6 +583,7 @@ export async function main(argv: string[]): Promise<void> {
         model: flags["model"] as string | undefined,
         fast: Boolean(flags["fast"]),
         skipGitRepoCheck: Boolean(flags["skip-git-repo-check"]),
+        bestOf: flags["best-of"] ? Number(flags["best-of"]) : undefined,
       });
       break;
     }
