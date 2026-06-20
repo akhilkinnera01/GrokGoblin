@@ -6,3 +6,6 @@ dist/
 
 .omg/
 .serena/
+
+# Local-only verification notes (not shipped)
+TEST_REPORT.md
