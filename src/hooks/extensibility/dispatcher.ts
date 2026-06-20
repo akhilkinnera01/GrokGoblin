@@ -17,8 +17,13 @@ export function discoverHookPlugins(
   cwd: string,
   grokHome: string
 ): DiscoveredHookPlugin[] {
+  // SECURITY: only execute hook plugins from the user's TRUSTED global grok home.
+  // We deliberately do NOT scan the project-local `./.grok/hooks` directory —
+  // executing `.js` files found there would let any cloned/opened repository run
+  // arbitrary code with the user's privileges the moment they run `gg` in it
+  // (a classic supply-chain / RCE vector). `cwd` is kept only for context.
+  void cwd;
   const dirs = [
-    join(cwd, ".grok", "hooks"),
     join(grokHome, "hooks"),
   ];
 

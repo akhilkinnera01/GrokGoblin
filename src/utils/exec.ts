@@ -1,4 +1,4 @@
-import { spawnSync, execSync, type SpawnSyncOptions } from "child_process";
+import { spawnSync, type SpawnSyncOptions } from "child_process";
 
 export interface RunResult {
   stdout: string;
@@ -39,12 +39,10 @@ export function runSyncOrThrow(
 }
 
 export function commandExists(name: string): boolean {
-  try {
-    execSync(`which ${name}`, { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
-  }
+  // Use argv form (no shell) so the name is never interpreted by a shell —
+  // avoids any command-injection surface if a non-literal is ever passed.
+  const result = spawnSync("which", [name], { stdio: "ignore" });
+  return result.status === 0;
 }
 
 export function tmuxAvailable(): boolean {

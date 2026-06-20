@@ -2,6 +2,7 @@ import { homedir } from "os";
 import { join, resolve } from "path";
 import { fileURLToPath } from "url";
 import { existsSync, mkdirSync } from "fs";
+import { randomBytes } from "crypto";
 import type { SetupScope } from "../types/index.js";
 
 export const GG_VERSION = "0.1.0";
@@ -125,8 +126,10 @@ export function resolveGrokBinPath(env = process.env): string {
 }
 
 export function ggSessionId(env = process.env): string {
+  // Use crypto-grade randomness for collision resistance (Math.random is neither
+  // unique-enough nor unpredictable). Session IDs namespace state/logs.
   return (
-    env["GG_SESSION_ID"] ?? `gg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    env["GG_SESSION_ID"] ?? `gg-${Date.now()}-${randomBytes(4).toString("hex")}`
   );
 }
 
