@@ -13,6 +13,7 @@ import {
   dim,
   exitWithError,
 } from "../utils/print.js";
+import { leaderSocketArgs } from "../utils/leader.js";
 
 // Shared completion sentinels for every GrokGoblin autonomous loop. Keeping one
 // pair means cruise/quest/ralph all drive to completion the same reliable way.
@@ -252,6 +253,9 @@ async function runLoop(
   // segments compaction persists compacted history as grep-able markdown, so a
   // long iteration can recover earlier detail instead of losing it to the window.
   grokArgs.push("--compaction-mode", "segments");
+  // Isolate the leader per MCP-config fingerprint so loop iterations honor the
+  // current MCP servers instead of a stale leader's cached connections.
+  grokArgs.push(...leaderSocketArgs(grokHome, cwd));
   if (model) grokArgs.push("-m", model);
   // --best-of-n runs the turn N ways in parallel and keeps the best (headless only).
   if (bestOf) {
