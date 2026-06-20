@@ -3,6 +3,7 @@ import { join } from "path";
 import { resolveGrokHome, resolveGgStateDir, DEFAULT_FRONTIER_MODEL } from "../utils/paths.js";
 import { commandExists, spawnGrokHeadless } from "../utils/exec.js";
 import { print, header, ok, warn, dim } from "../utils/print.js";
+import { leaderSocketArgs } from "../utils/leader.js";
 
 export interface ForageOptions {
   facets?: number;
@@ -67,6 +68,9 @@ export async function runForage(
   // No --tools restriction here: grok's native web_search/web_fetch/x_search stay
   // available for real-time grounding. --experimental-memory lets it recall prior research.
   const grokArgs = ["--always-approve", "--experimental-memory", "--output-format", "plain", "-m", model];
+  // Isolate the leader by MCP-config fingerprint so research picks up the
+  // current MCP servers rather than a stale leader's cached connections.
+  grokArgs.push(...leaderSocketArgs(grokHome, cwd));
   const result = spawnGrokHeadless(
     prompt,
     grokArgs,
