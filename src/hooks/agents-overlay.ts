@@ -141,7 +141,7 @@ ${OVERLAY_END}
 
 ---
 
-*Powered by [GrokGoblin](https://github.com/akhilkinnera/grokgoblin) — native multi-agent orchestration for the grok CLI.*
+*Powered by [GrokGoblin](https://github.com/akhilkinnera01/grokgoblin) — native multi-agent orchestration for the grok CLI.*
 `;
 }
 

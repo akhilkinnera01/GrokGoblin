@@ -79,7 +79,7 @@ It installs natively into grok — **skills, hooks, agent roles, and `AGENTS.md`
 ## Install
 
 ```bash
-git clone https://github.com/akhilkinnera/grokgoblin
+git clone https://github.com/akhilkinnera01/grokgoblin
 cd grokgoblin
 npm install            # builds automatically (prepare step)
 npm install -g .       # provides the `gg` and `grokgoblin` commands
