@@ -78,14 +78,35 @@ It installs natively into grok — **skills, hooks, agent roles, and `AGENTS.md`
 
 ## Install
 
+**Fastest — no clone, no install (npx):**
+
 ```bash
-git clone https://github.com/akhilkinnera01/grokgoblin
-cd grokgoblin
+npx grokgoblin setup    # skills, hooks, roles & AGENTS.md into ~/.grok
+npx grokgoblin doctor   # verify the install (should be all green)
+```
+
+Or install once for the short `grokgoblin` (and `gg`) command:
+
+```bash
+npm install -g grokgoblin
+grokgoblin setup
+grokgoblin doctor
+```
+
+<details>
+<summary>From source (for hacking on GrokGoblin)</summary>
+
+```bash
+git clone https://github.com/akhilkinnera01/GrokGoblin
+cd GrokGoblin
 npm install            # builds automatically (prepare step)
 npm install -g .       # provides the `gg` and `grokgoblin` commands
-gg setup               # installs skills, hooks, roles & AGENTS.md into ~/.grok
-gg doctor              # verify the install (should be all green)
+gg setup
+gg doctor
 ```
+
+Want the very latest unreleased commit? `npx github:akhilkinnera01/GrokGoblin setup` builds and runs it straight from the repo.
+</details>
 
 > **Heads-up on the `gg` name:** if you use oh-my-zsh, `gg` is aliased to `git gui citool`. Either remove that alias, or just use the full `grokgoblin` command — they're identical. GrokGoblin's own hooks always call `grokgoblin`, so they can never be shadowed.
 
@@ -365,6 +386,7 @@ GrokGoblin quietly wires up some of grok's most useful but lesser-known capabili
 - **Best-of-N quality.** `--best-of <n>` runs the work **N ways in parallel and keeps the best** (`grok --best-of-n`, headless only). Spend more compute when correctness matters.
 - **Real-time grounding.** GrokGoblin never restricts grok's web tools on its main flows, and the brain + skills tell grok to proactively `web_search` / X-search for current versions, APIs and best practices — with citations.
 - **Future-model safe.** No model allowlist gates execution, and `--effort` is only sent to models known to support it, so it can never `400` your session.
+- **MCP that actually reloads.** grok runs a persistent *leader* daemon (`~/.grok/leader.sock`) that caches MCP servers across sessions — so editing your `[mcp_servers.*]` config is silently ignored until that leader dies (there's no `--mcp-config` reload flag). GrokGoblin fingerprints your effective MCP config and pins each run to a per-config leader socket (`--leader-socket`): change your MCP servers and the very next run picks them up; leave them unchanged and the warm leader is reused. No HOME-forking, and your auth/memory/skills stay shared. Opt out with `GG_NO_LEADER_ISOLATION=1`.
 
 > ⚠️ **Reasoning effort:** the current grok models don't support a reasoning-effort parameter, so `--high` / `--effort` are accepted but no-op until grok ships an effort-capable model.
 
@@ -406,6 +428,7 @@ GrokGoblin uses grok's own extension points — there's no separate agent runtim
 ├── prompts/gg-*.md   goblin role prompts
 ├── hooks/hooks.json  lifecycle hooks
 ├── config.toml       models, memory, permissions
+├── leaders/          per-MCP-config leader sockets (gg-<hash>.sock)
 └── memory/           grok native cross-session memory
 ```
 
