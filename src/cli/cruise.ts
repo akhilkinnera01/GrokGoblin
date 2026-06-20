@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, writeFileSync, appendFileSync, readFileSync } from "fs";
-import { join } from "path";
-import { resolveGrokHome, DEFAULT_FAST_MODEL } from "../utils/paths.js";
+import { join, dirname } from "path";
+import { resolveGrokHome, DEFAULT_FAST_MODEL, resolveProjectMemoryPath } from "../utils/paths.js";
 import { isGitRepo, gitRepoRoot, spawnGrokHeadless } from "../utils/exec.js";
 import { commandExists } from "../utils/exec.js";
 import {
@@ -29,6 +29,59 @@ export interface LoopOptions {
   skipGitRepoCheck?: boolean;
   /** grok --best-of-n: run each iteration N ways in parallel and keep the best. */
   bestOf?: number;
+  /** Write a memory digest at the end of the run (default true). */
+  digest?: boolean;
+}
+
+// Keep the injected project-memory file bounded so it doesn't bloat the prompt.
+const MAX_MEMORY_FILE_BYTES = 24_000;
+
+// Append a concise, durable digest of this run to the GrokGoblin project memory
+// file (.grokgoblin/memory/project.md), which the launch overlay injects into
+// AGENTS.md next session — so the next session recalls what this run accomplished.
+function writeMemoryDigest(
+  repoRoot: string,
+  kind: string,
+  goal: string,
+  completed: boolean,
+  iterations: number,
+  progressPath: string
+): string | null {
+  try {
+    const memPath = resolveProjectMemoryPath(repoRoot);
+    mkdirSync(dirname(memPath), { recursive: true });
+
+    const progress = existsSync(progressPath) ? readFileSync(progressPath, "utf-8") : "";
+    const lastSummary = lastIterationSummary(progress);
+    const entry = [
+      `## ${new Date().toISOString().slice(0, 10)} — ${kind} (${completed ? "completed" : "stopped"})`,
+      `**Goal:** ${goal.trim()}`,
+      `**Iterations:** ${iterations}${completed ? " · verified complete" : " · stopped before completion"}`,
+      lastSummary ? `**Outcome:** ${lastSummary}` : "",
+      "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const existing = existsSync(memPath) ? readFileSync(memPath, "utf-8") : "# Project memory\n\n";
+    let next = existing.trimEnd() + "\n\n" + entry + "\n";
+    // Bound the file: keep the most recent content if it grows too large.
+    if (Buffer.byteLength(next, "utf-8") > MAX_MEMORY_FILE_BYTES) {
+      next = "# Project memory\n\n" + tail(next, MAX_MEMORY_FILE_BYTES - 200);
+    }
+    writeFileSync(memPath, next, "utf-8");
+    return memPath;
+  } catch {
+    return null;
+  }
+}
+
+// Pull a compact one-paragraph outcome from the last iteration block of progress.md.
+function lastIterationSummary(progress: string): string {
+  if (!progress.trim()) return "";
+  const blocks = progress.split(/\n## Iteration \d+\n/).filter((b) => b.trim());
+  const last = blocks[blocks.length - 1] ?? "";
+  return last.replace(/\s+/g, " ").trim().slice(0, 400);
 }
 
 // Back-compat alias for the previous public name.
@@ -197,7 +250,9 @@ async function runLoop(
   }
 
   let completed = false;
+  let iterationsRun = 0;
   for (let i = 1; i <= maxIterations; i++) {
+    iterationsRun = i;
     step(`Iteration ${i}/${maxIterations}...`);
     const progressSoFar = existsSync(progressPath)
       ? readFileSync(progressPath, "utf-8")
@@ -255,6 +310,13 @@ async function runLoop(
     warn(`${spec.title} stopped after ${maxIterations} iteration(s) without a ${COMPLETE_SENTINEL} signal.`);
     print(dim(`Review progress: ${progressPath}`));
   }
+
+  // Capture a durable digest so the next session recalls what this run did.
+  if (options.digest !== false) {
+    const digestPath = writeMemoryDigest(repoRoot, spec.kind, goal, completed, iterationsRun, progressPath);
+    if (digestPath) print(dim(`Memory digest: ${digestPath}`));
+  }
+
   print(dim(`Full log: ${logPath}`));
 }
 
