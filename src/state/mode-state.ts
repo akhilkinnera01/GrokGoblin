@@ -2,7 +2,22 @@ import { existsSync, mkdirSync } from "fs";
 import { dirname } from "path";
 import type { ModeState, GgMode } from "../types/index.js";
 import { resolveModeStatePath, ggSessionId } from "../utils/paths.js";
-import { readJsonFile, writeJsonFile } from "../utils/toml.js";
+import { readJsonFileValidated, writeJsonFile } from "../utils/toml.js";
+
+// Minimal structural check for a state file. State files are written by the
+// agent via file tools, so a malformed/partial write must not crash the next
+// run — an invalid file is quarantined and treated as "no state".
+function isModeState(value: unknown): value is ModeState {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v["mode"] === "string" &&
+    typeof v["active"] === "boolean" &&
+    typeof v["iteration"] === "number" &&
+    typeof v["currentPhase"] === "string" &&
+    typeof v["taskDescription"] === "string"
+  );
+}
 
 export function readModeState(
   mode: GgMode,
@@ -10,7 +25,7 @@ export function readModeState(
   sessionId?: string
 ): ModeState | null {
   const statePath = resolveModeStatePath(mode, cwd, sessionId);
-  return readJsonFile<ModeState>(statePath);
+  return readJsonFileValidated<ModeState>(statePath, isModeState);
 }
 
 export function writeModeState(

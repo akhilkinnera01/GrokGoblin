@@ -15,6 +15,7 @@ import {
 import {
   generateRuntimeOverlay,
   injectOverlayIntoAgentsMd,
+  stripOverlayFromAgentsMd,
   writeSessionInstructions,
   cleanupSessionInstructions,
 } from "../hooks/agents-overlay.js";
@@ -147,6 +148,36 @@ async function prepareWorktree(
   return res.path;
 }
 
+// Inject the runtime overlay into the global AGENTS.md (between the RUNTIME
+// markers) so grok reliably reads it as part of its system prompt. Returns a
+// best-effort restore function that strips the overlay back out on exit.
+function injectOverlayIntoAgentsMdFile(grokHome: string, overlay: string): () => void {
+  const agentsMdPath = resolveAgentsMdPath(grokHome);
+  if (!existsSync(agentsMdPath)) {
+    // No AGENTS.md yet (setup not run) — nothing to inject into.
+    return () => {};
+  }
+  let original: string;
+  try {
+    original = readFileSync(agentsMdPath, "utf-8");
+  } catch {
+    return () => {};
+  }
+  try {
+    writeFileSync(agentsMdPath, injectOverlayIntoAgentsMd(original, overlay), "utf-8");
+  } catch {
+    return () => {};
+  }
+  return () => {
+    try {
+      const current = readFileSync(agentsMdPath, "utf-8");
+      writeFileSync(agentsMdPath, stripOverlayFromAgentsMd(current), "utf-8");
+    } catch {
+      // best-effort cleanup; a leftover overlay is harmless and overwritten next launch.
+    }
+  };
+}
+
 export async function runLaunch(
   cwd: string,
   options: LaunchOptions,
@@ -175,7 +206,12 @@ export async function runLaunch(
   const session = createSessionState(launchCwd, sessionId);
 
   const overlay = generateRuntimeOverlay(launchCwd, sessionId);
-  const instructionsPath = writeSessionInstructions(grokHome, sessionId, overlay);
+  // Keep the session-instructions file for tooling/inspection, but DON'T rely on
+  // an async SessionStart hook to inject the dynamic overlay — grok runs those
+  // hooks async and ignores their output. Instead inject the overlay directly
+  // into AGENTS.md (always loaded into grok's system prompt) and strip it on exit.
+  writeSessionInstructions(grokHome, sessionId, overlay);
+  const restoreAgentsMd = injectOverlayIntoAgentsMdFile(grokHome, overlay);
 
   const env: NodeJS.ProcessEnv = {
     ...process.env,
@@ -217,6 +253,8 @@ export async function runLaunch(
     print(dim(`Launched in tmux session: ${bold(tmuxSessionName)}`));
     print(dim(`Attaching... (Ctrl+B D to detach)`));
     tmuxAttach(tmuxSessionName);
+    // grok loaded AGENTS.md when its session started; safe to restore now.
+    restoreAgentsMd();
   } else {
     const result = spawnSync(grokBin, grokArgs, {
       stdio: "inherit",
@@ -224,6 +262,7 @@ export async function runLaunch(
       cwd: launchCwd,
     });
 
+    restoreAgentsMd();
     cleanupSessionInstructions(grokHome, sessionId);
 
     dispatchHookEvent(

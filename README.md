@@ -134,8 +134,10 @@ GrokGoblin uses grok's own extension points, so there's no separate agent runtim
 
 - **Skills** → a deliberately small set of `/` commands (no command sprawl): `/goblinplan`, `/dig`, `/cruise`, `/quest`, `/ralph`, `/goblins`, `/code-review`, `/tdd`.
 - **Hooks** → installed to `~/.grok/hooks/hooks.json` (Claude-Code schema) and fire on grok's tool/session lifecycle.
-- **`AGENTS.md`** → the orchestration brain, appended to grok's system prompt.
+- **`AGENTS.md`** → the orchestration brain, appended to grok's system prompt. The per-session dynamic overlay (codebase map, active modes, notepad) is injected straight into `AGENTS.md` at launch and stripped on exit — so it's reliably loaded into the system prompt rather than depending on an async hook grok might never read.
 - **Config** → manages real `config.toml` keys (default model, compaction, permissions).
+
+> **Robust state:** workflow state files under `.grokgoblin/state/` are written atomically (temp + rename) and shape-validated on read — a malformed or partial write is quarantined to `*.corrupt` and treated as "no state" instead of crashing the next run.
 
 Inspect roles with `gg agents` or `gg list agents`.
 
