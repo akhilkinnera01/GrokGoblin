@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-  <img alt="Node >= 20" src="https://img.shields.io/badge/node-%3E%3D20-339933?logo=node.js&logoColor=white">
+  <img alt="Node v20+" src="https://img.shields.io/badge/node-%3E%3D20-339933?logo=node.js&logoColor=white">
   <img alt="grok CLI 0.2.x" src="https://img.shields.io/badge/grok%20CLI-0.2.x-black">
   <img alt="Status: beta" src="https://img.shields.io/badge/status-beta-orange">
 </p>
