@@ -13,7 +13,6 @@
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
   <img alt="Node >= 20" src="https://img.shields.io/badge/node-%3E%3D20-339933?logo=node.js&logoColor=white">
   <img alt="grok CLI 0.2.x" src="https://img.shields.io/badge/grok%20CLI-0.2.x-black">
-  <img alt="No paid tier required" src="https://img.shields.io/badge/SuperGrok-not%20required-success">
   <img alt="Status: beta" src="https://img.shields.io/badge/status-beta-orange">
 </p>
 
@@ -58,7 +57,7 @@
 
 GrokGoblin wraps the `grok` CLI you already use and turns it into an opinionated, repeatable engineering workflow: **clarify → plan → execute → verify**, with specialist roles, persistent loops, and an autonomous mode that keeps working until the job is actually done.
 
-It installs natively into grok — **skills, hooks, agent roles, and `AGENTS.md`** — so everything works inside ordinary `grok` sessions, not a separate runtime. There's no extra daemon, no separate model server, and no paid tier required.
+It installs natively into grok — **skills, hooks, agent roles, and `AGENTS.md`** — so everything works inside ordinary `grok` sessions, not a separate runtime. There's no extra daemon and no separate model server.
 
 **Why use it**
 
@@ -71,7 +70,7 @@ It installs natively into grok — **skills, hooks, agent roles, and `AGENTS.md`
 
 ## Requirements
 
-- **[grok CLI](https://x.ai)** `0.2.x`, installed and signed in (`grok login`). No SuperGrok / paid tier required.
+- **[grok CLI](https://x.ai)** `0.2.x`, installed and signed in (`grok login`).
 - **Node.js** `>= 20`.
 - *(optional)* **tmux** — only for the visual multi-pane modes. GrokGoblin auto-detects it and falls back gracefully if it's missing.
 
