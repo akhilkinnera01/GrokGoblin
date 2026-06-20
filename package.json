@@ -40,11 +40,12 @@
     "hooks"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x dist/index.js",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "lint": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepare": "tsc && chmod +x dist/index.js"
   },
   "dependencies": {
     "@iarna/toml": "^3.0.0"
