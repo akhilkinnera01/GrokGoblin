@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from "fs";
+import { existsSync, mkdirSync, writeFileSync, readFileSync, openSync, closeSync, unlinkSync } from "fs";
 import { join, resolve } from "path";
 import { spawnSync } from "child_process";
 import type { LaunchOptions, ResolvedLaunchPolicy } from "../types/index.js";
@@ -16,6 +16,7 @@ import {
   generateRuntimeOverlay,
   injectOverlayIntoAgentsMd,
   stripOverlayFromAgentsMd,
+  overlayRegionIncludes,
   writeSessionInstructions,
   cleanupSessionInstructions,
 } from "../hooks/agents-overlay.js";
@@ -148,30 +149,67 @@ async function prepareWorktree(
   return res.path;
 }
 
+// Best-effort exclusive file lock (atomic O_EXCL create) so concurrent `gg`
+// sessions don't interleave the read-modify-write of the shared AGENTS.md.
+function withAgentsLock(lockPath: string, fn: () => void): void {
+  let fd: number | undefined;
+  const deadline = Date.now() + 2000;
+  while (fd === undefined) {
+    try {
+      fd = openSync(lockPath, "wx");
+    } catch {
+      if (Date.now() > deadline) {
+        // Assume a stale lock; proceed without it rather than hang.
+        try { unlinkSync(lockPath); } catch {}
+        break;
+      }
+      const until = Date.now() + 25;
+      while (Date.now() < until) { /* brief spin */ }
+    }
+  }
+  try {
+    fn();
+  } finally {
+    if (fd !== undefined) {
+      try { closeSync(fd); } catch {}
+      try { unlinkSync(lockPath); } catch {}
+    }
+  }
+}
+
 // Inject the runtime overlay into the global AGENTS.md (between the RUNTIME
 // markers) so grok reliably reads it as part of its system prompt. Returns a
-// best-effort restore function that strips the overlay back out on exit.
-function injectOverlayIntoAgentsMdFile(grokHome: string, overlay: string): () => void {
+// restore function that strips the overlay on exit. Concurrency-safe: the
+// read-modify-write is locked, and on exit we ONLY strip if the overlay region
+// is still ours (matches our sessionId) — so we never wipe another concurrent
+// session's overlay or leave stale snapshot content behind.
+function injectOverlayIntoAgentsMdFile(
+  grokHome: string,
+  overlay: string,
+  sessionId: string
+): () => void {
   const agentsMdPath = resolveAgentsMdPath(grokHome);
   if (!existsSync(agentsMdPath)) {
     // No AGENTS.md yet (setup not run) — nothing to inject into.
     return () => {};
   }
-  let original: string;
+  const lockPath = agentsMdPath + ".lock";
   try {
-    original = readFileSync(agentsMdPath, "utf-8");
-  } catch {
-    return () => {};
-  }
-  try {
-    writeFileSync(agentsMdPath, injectOverlayIntoAgentsMd(original, overlay), "utf-8");
+    withAgentsLock(lockPath, () => {
+      const original = readFileSync(agentsMdPath, "utf-8");
+      writeFileSync(agentsMdPath, injectOverlayIntoAgentsMd(original, overlay), "utf-8");
+    });
   } catch {
     return () => {};
   }
   return () => {
     try {
-      const current = readFileSync(agentsMdPath, "utf-8");
-      writeFileSync(agentsMdPath, stripOverlayFromAgentsMd(current), "utf-8");
+      withAgentsLock(lockPath, () => {
+        const current = readFileSync(agentsMdPath, "utf-8");
+        if (overlayRegionIncludes(current, sessionId)) {
+          writeFileSync(agentsMdPath, stripOverlayFromAgentsMd(current), "utf-8");
+        }
+      });
     } catch {
       // best-effort cleanup; a leftover overlay is harmless and overwritten next launch.
     }
@@ -211,7 +249,7 @@ export async function runLaunch(
   // hooks async and ignores their output. Instead inject the overlay directly
   // into AGENTS.md (always loaded into grok's system prompt) and strip it on exit.
   writeSessionInstructions(grokHome, sessionId, overlay);
-  const restoreAgentsMd = injectOverlayIntoAgentsMdFile(grokHome, overlay);
+  const restoreAgentsMd = injectOverlayIntoAgentsMdFile(grokHome, overlay, sessionId);
 
   const env: NodeJS.ProcessEnv = {
     ...process.env,

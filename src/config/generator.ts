@@ -153,15 +153,23 @@ function isGgMatcher(group: GrokHookMatcher): boolean {
   return group.hooks.some((h) => isGgCommand(h.command));
 }
 
+// grok runs hook `command` strings through a shell, so the binary path must be
+// shell-quoted — otherwise a GG_ENTRY_PATH containing spaces (e.g. an absolute
+// path under "My Workspace/") would split into the wrong argv or be abusable.
+function shellQuote(s: string): string {
+  return `'${s.replace(/'/g, `'\\''`)}'`;
+}
+
 export function buildGgHookMatchers(
   ggBin: string
 ): Record<string, GrokHookMatcher[]> {
+  const bin = shellQuote(ggBin);
   return {
     SessionStart: [
       {
         matcher: "startup|clear|compact",
         hooks: [
-          { type: "command", command: `${ggBin} hook session-start`, async: true },
+          { type: "command", command: `${bin} hook session-start`, async: true },
         ],
       },
     ],
@@ -169,24 +177,24 @@ export function buildGgHookMatchers(
       {
         matcher: "*",
         hooks: [
-          { type: "command", command: `${ggBin} hook session-end`, async: true },
+          { type: "command", command: `${bin} hook session-end`, async: true },
         ],
       },
     ],
     PreToolUse: [
       {
         matcher: "Shell",
-        hooks: [{ type: "command", command: `${ggBin} hook pre-command` }],
+        hooks: [{ type: "command", command: `${bin} hook pre-command` }],
       },
     ],
     PostToolUse: [
       {
         matcher: "Write|StrReplace",
-        hooks: [{ type: "command", command: `${ggBin} hook post-edit` }],
+        hooks: [{ type: "command", command: `${bin} hook post-edit` }],
       },
       {
         matcher: "Shell",
-        hooks: [{ type: "command", command: `${ggBin} hook post-command` }],
+        hooks: [{ type: "command", command: `${bin} hook post-command` }],
       },
     ],
   };

@@ -538,7 +538,18 @@ export async function main(argv: string[]): Promise<void> {
       if (!subCmd || subCmd === "list") {
         await runStateList(cwd);
       } else if (subCmd === "clear") {
-        warn("State clear not yet implemented. Delete .grokgoblin/state/ manually.");
+        const { rmSync, mkdirSync } = await import("fs");
+        const { join } = await import("path");
+        const { resolveGgStateDir } = await import("../utils/paths.js");
+        const { ok, exitWithError } = await import("../utils/print.js");
+        const stateDir = join(resolveGgStateDir(cwd), "state");
+        try {
+          rmSync(stateDir, { recursive: true, force: true });
+          mkdirSync(stateDir, { recursive: true });
+          ok("Cleared all workflow mode state in .grokgoblin/state/");
+        } catch (e: any) {
+          exitWithError(`Failed to clear state: ${e.message}`);
+        }
       } else {
         exitWithError(`Unknown state subcommand: ${subCmd}`);
       }

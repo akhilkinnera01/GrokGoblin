@@ -4,6 +4,7 @@ import {
   resolveGrokHome,
   resolveSkillsDir,
   resolveGgStateDir,
+  GROKGOBLIN_SKILLS,
 } from "../utils/paths.js";
 import { listAgentNames } from "../agents/definitions.js";
 import { print, header, dim, bold, info } from "../utils/print.js";
@@ -11,7 +12,11 @@ import { print, header, dim, bold, info } from "../utils/print.js";
 function skillDirs(skillsDir: string): string[] {
   if (!existsSync(skillsDir)) return [];
   return readdirSync(skillsDir)
-    .filter((name) => existsSync(join(skillsDir, name, "SKILL.md")))
+    .filter(
+      (name) =>
+        existsSync(join(skillsDir, name, "SKILL.md")) &&
+        GROKGOBLIN_SKILLS.includes(name)
+    )
     .sort();
 }
 

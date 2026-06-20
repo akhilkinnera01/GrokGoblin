@@ -216,6 +216,16 @@ export function stripOverlayFromAgentsMd(content: string): string {
   );
 }
 
+// True if the current overlay region belongs to this session (contains its id).
+// Used so a session only strips its OWN overlay on exit and never wipes the
+// overlay of another concurrently-running session.
+export function overlayRegionIncludes(content: string, needle: string): boolean {
+  const start = content.indexOf(OVERLAY_START);
+  const end = content.indexOf(OVERLAY_END);
+  if (start === -1 || end === -1) return false;
+  return content.slice(start, end).includes(needle);
+}
+
 export function writeSessionInstructions(
   grokHome: string,
   sessionId: string,

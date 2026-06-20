@@ -191,6 +191,6 @@ export async function runWorktree(
     default:
       // `gg worktree list` is the implicit default, but if the first token isn't a
       // known subcommand, treat the whole thing as a name for `new`.
-      runList(cwd);
+      runNew(cwd, args);
   }
 }
