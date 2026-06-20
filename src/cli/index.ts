@@ -40,6 +40,16 @@ interface ResolvedCliInvocation {
   flags: Record<string, string | boolean | number>;
 }
 
+// Flags that are always boolean — they must NEVER consume the following token as
+// their value, otherwise e.g. `gg exec --madmax "prompt"` would swallow the
+// prompt. Anything not listed here may take a value (`--model grok-build`).
+const BOOLEAN_FLAGS = new Set([
+  "madmax", "yolo", "high", "xhigh", "direct", "tmux", "fast", "plan", "ask",
+  "check", "force", "verbose", "team", "mcp", "skip-git-repo-check",
+  "always-approve", "history", "branch", "all", "merged", "help", "version",
+  "merge-agents", "continue", "no-subagents",
+]);
+
 function parseArgs(argv: string[]): {
   positional: string[];
   flags: Record<string, string | boolean | number>;
@@ -51,13 +61,18 @@ function parseArgs(argv: string[]): {
     const arg = argv[i];
     if (arg.startsWith("--")) {
       const eq = arg.indexOf("=");
+      const name = eq !== -1 ? arg.slice(2, eq) : arg.slice(2);
       if (eq !== -1) {
-        flags[arg.slice(2, eq)] = arg.slice(eq + 1);
-      } else if (i + 1 < argv.length && !argv[i + 1].startsWith("-")) {
-        flags[arg.slice(2)] = argv[i + 1];
+        flags[name] = arg.slice(eq + 1);
+      } else if (
+        !BOOLEAN_FLAGS.has(name) &&
+        i + 1 < argv.length &&
+        !argv[i + 1].startsWith("-")
+      ) {
+        flags[name] = argv[i + 1];
         i++;
       } else {
-        flags[arg.slice(2)] = true;
+        flags[name] = true;
       }
     } else if (arg.startsWith("-") && arg.length === 2) {
       const shortMap: Record<string, string> = {
