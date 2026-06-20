@@ -144,9 +144,11 @@ export interface GrokHooksFile {
 }
 
 // A hook group is "ours" if any of its commands invoke the GrokGoblin bin
-// (either `grokgoblin hook ...` or the short `gg hook ...`).
+// (either `grokgoblin hook ...` or the short `gg hook ...`). Quote-tolerant, since
+// the binary path is shell-quoted in the command (e.g. `'grokgoblin' hook ...`).
+const GG_HOOK_CMD_RE = /(grokgoblin|gg)['"]?\s+hook\b/;
 function isGgCommand(command: string): boolean {
-  return command.includes("grokgoblin hook") || command.includes("gg hook");
+  return GG_HOOK_CMD_RE.test(command);
 }
 
 function isGgMatcher(group: GrokHookMatcher): boolean {

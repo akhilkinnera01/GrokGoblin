@@ -220,7 +220,16 @@ async function runLoop(
     exitWithError(`Not in a git repository. ${spec.kind} edits code — run inside a repo or pass --skip-git-repo-check.`);
   }
 
-  const maxIterations = options.maxIterations ?? DEFAULT_MAX_ITERATIONS;
+  // Coerce to a sane positive integer — a bad `--max-iterations foo` (NaN) must
+  // fall back to the default, not silently run zero iterations.
+  const maxIterations =
+    Number.isFinite(options.maxIterations) && (options.maxIterations as number) > 0
+      ? Math.floor(options.maxIterations as number)
+      : DEFAULT_MAX_ITERATIONS;
+  const bestOf =
+    Number.isFinite(options.bestOf) && (options.bestOf as number) > 1
+      ? Math.floor(options.bestOf as number)
+      : undefined;
   const model = options.model ?? (options.fast ? DEFAULT_FAST_MODEL : undefined);
 
   const repoRoot = gitRepoRoot(cwd) ?? cwd;
@@ -245,8 +254,8 @@ async function runLoop(
   grokArgs.push("--compaction-mode", "segments");
   if (model) grokArgs.push("-m", model);
   // --best-of-n runs the turn N ways in parallel and keeps the best (headless only).
-  if (options.bestOf && options.bestOf > 1) {
-    grokArgs.push("--best-of-n", String(options.bestOf));
+  if (bestOf) {
+    grokArgs.push("--best-of-n", String(bestOf));
   }
 
   let completed = false;

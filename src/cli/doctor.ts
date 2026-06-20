@@ -183,7 +183,7 @@ export async function runDoctor(
       const parsed = JSON.parse(content);
       registered =
         Boolean(parsed?.hooks) &&
-        (content.includes("grokgoblin hook") || content.includes("gg hook"));
+        /(grokgoblin|gg)['"]?\s+hook\b/.test(content);
     } catch {
       registered = false;
     }

@@ -28,7 +28,9 @@ export async function runForage(
     process.exit(1);
   }
 
-  const facets = Math.min(6, Math.max(1, options.facets ?? 3));
+  // Clamp to 1..6; a bad/NaN --facets falls back to 3 (NaN bypasses ??).
+  const requested = Number.isFinite(options.facets) ? Math.floor(options.facets as number) : 3;
+  const facets = Math.min(6, Math.max(1, requested));
   const model = options.model ?? DEFAULT_FRONTIER_MODEL;
   const grokHome = resolveGrokHome();
 
