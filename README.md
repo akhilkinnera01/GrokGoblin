@@ -431,9 +431,6 @@ No. Everything (subagents, memory, hooks) works on the standard grok CLI.
 **`--high` / `--effort` seem to do nothing.**
 Correct — current grok models don't support reasoning effort. The flags are accepted but skipped so they can never break a session.
 
-**A `.serena/` folder keeps appearing — is that GrokGoblin?**
-No. That's the [serena](https://github.com/oraios/serena) MCP server (separate tooling). GrokGoblin has zero references to it. Delete it freely, or disable serena for the project in your MCP settings.
-
 **Will it break when xAI releases a new model?**
 No. Point at it with `gg config set models.default <new-id>` (or `gg --model <new-id>`) — there's no allowlist blocking unknown models.
 
@@ -450,6 +447,10 @@ gg uninstall    # remove GrokGoblin hooks, roles & config keys (skills/AGENTS.md
 ```
 
 ---
+
+## Credits
+
+Inspired by the `oh-my-*` developer-tooling ecosystem, including [oh-my-codex](https://github.com/Yeachan-Heo/oh-my-codex) by Yeachan Heo.
 
 ## License
 
