@@ -17,7 +17,6 @@ type CliCommand =
   | "list"
   | "cruise"
   | "quest"
-  | "supragoal"
   | "config"
   | "skills"
   | "hooks"
@@ -47,7 +46,7 @@ const BOOLEAN_FLAGS = new Set([
   "berserk", "yolo", "high", "xhigh", "direct", "tmux", "fast", "plan", "ask",
   "check", "force", "verbose", "team", "mcp", "skip-git-repo-check",
   "always-approve", "history", "branch", "all", "merged", "help", "version",
-  "merge-agents", "continue", "no-subagents",
+  "merge-agents", "continue", "no-subagents", "no-digest",
 ]);
 
 function parseArgs(argv: string[]): {
@@ -125,7 +124,6 @@ function resolveCliInvocation(argv: string[]): ResolvedCliInvocation {
     "list",
     "cruise",
     "quest",
-    "supragoal",
     "config",
     "skills",
     "hooks",
@@ -446,12 +444,12 @@ export async function main(argv: string[]): Promise<void> {
         fast: Boolean(flags["fast"]),
         skipGitRepoCheck: Boolean(flags["skip-git-repo-check"]),
         bestOf: flags["best-of"] ? Number(flags["best-of"]) : undefined,
+        digest: !flags["no-digest"],
       });
       break;
     }
 
-    case "quest":
-    case "supragoal": {
+    case "quest": {
       // Durable multi-goal decomposition — runs as an autonomous, checkpointed
       // loop (not a single headless turn) so it actually drives to completion.
       const goal = args.join(" ").trim();
@@ -464,6 +462,7 @@ export async function main(argv: string[]): Promise<void> {
         fast: Boolean(flags["fast"]),
         skipGitRepoCheck: Boolean(flags["skip-git-repo-check"]),
         bestOf: flags["best-of"] ? Number(flags["best-of"]) : undefined,
+        digest: !flags["no-digest"],
       });
       break;
     }
@@ -584,6 +583,7 @@ export async function main(argv: string[]): Promise<void> {
         fast: Boolean(flags["fast"]),
         skipGitRepoCheck: Boolean(flags["skip-git-repo-check"]),
         bestOf: flags["best-of"] ? Number(flags["best-of"]) : undefined,
+        digest: !flags["no-digest"],
       });
       break;
     }

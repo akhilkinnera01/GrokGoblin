@@ -19,7 +19,7 @@ Use quest when:
 ### Setup
 
 ```
-[SUPRAGOAL SETUP]
+[QUEST SETUP]
 Task: {overall task}
 Goals:
   G001: {first goal} — criteria: {how to verify}
@@ -46,7 +46,7 @@ For each goal Gxxx:
 ### Completion
 
 ```
-[SUPRAGOAL COMPLETE]
+[QUEST COMPLETE]
 Goals completed: {n}/{total}
 Total evidence: {summary}
 Ledger: .grokgoblin/quest/ledger.jsonl
