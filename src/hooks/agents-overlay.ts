@@ -102,7 +102,7 @@ For any non-trivial task:
 
 ---
 
-## Your goblins (delegate via the \`task\` tool)
+## Your goblins (delegate via the \`spawn_subagent\` tool, alias \`task\`)
 
 Spawn specialist subagents in parallel for independent work. Read-only goblins cannot edit files.
 

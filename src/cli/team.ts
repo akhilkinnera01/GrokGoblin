@@ -7,6 +7,7 @@ import {
   DEFAULT_FRONTIER_MODEL,
 } from "../utils/paths.js";
 import { AGENT_DEFINITIONS } from "../agents/definitions.js";
+import { buildRolePrompt } from "../config/subagents.js";
 import {
   print,
   ok,
@@ -132,17 +133,38 @@ async function runTeamNative(
     `## Task\n${task}`,
     "",
     "## How to work",
-    `- Decompose the task into independent pieces and use the \`task\` tool to spawn UP TO ${workerCount} parallel subagents.`,
-    `- Prefer these GrokGoblin specialist roles where they fit: ${roleNames.join(", ")}.`,
-    preferredRole ? `- Bias toward the \`${preferredRole}\` role for the worker subagents.` : "",
-    "- Assign each subagent a clear, self-contained scope. Run independent work in parallel.",
-    "- After subagents return, integrate their results, resolve conflicts, and verify (build/tests) if applicable.",
-    "- Finish with a concise summary of what each subagent did and the final outcome.",
+    `- Decompose the task into UP TO ${workerCount} independent specialist passes, each playing one of the GrokGoblin goblin roles below.`,
+    `- Available goblin roles (registered via --agents): ${roleNames.join(", ")}.`,
+    preferredRole ? `- Bias toward the \`${preferredRole}\` role for the specialist passes.` : "",
+    "- PREFER spawning them as real parallel subagents via the `spawn_subagent` tool (alias `task`) if it is invocable in this session.",
+    "- If subagent spawning is not invocable here, run the specialist passes yourself IN PARALLEL (e.g. parallel tool calls / background commands) — do NOT get stuck trying to call an unavailable tool.",
+    "- Either way, each pass must have a clear, self-contained scope and run independently from the others.",
+    "- Then integrate the passes, resolve conflicts, and verify (build/tests) if applicable.",
+    "- Finish with a concise summary of what each goblin found and the final outcome.",
   ]
     .filter(Boolean)
     .join("\n");
 
-  const grokArgs = ["--always-approve", "--experimental-memory", "--output-format", "plain", "-m", leaderModel];
+  // Headless `grok -p` does NOT expose the subagent spawn tool unless agent
+  // definitions are passed via --agents. Supplying the goblin roster here is what
+  // makes `spawn_subagent` available so the leader spawns REAL native subagents
+  // (verified: without --agents the leader falls back to background workers).
+  const agentsMap: Record<string, { description: string; prompt: string; model: string }> = {};
+  for (const [name, def] of Object.entries(AGENT_DEFINITIONS)) {
+    agentsMap[name] = {
+      description: def.description,
+      prompt: buildRolePrompt(name, def),
+      model: def.model,
+    };
+  }
+
+  const grokArgs = [
+    "--always-approve",
+    "--experimental-memory",
+    "--agents", JSON.stringify(agentsMap),
+    "--output-format", "plain",
+    "-m", leaderModel,
+  ];
 
   const result = spawnGrokHeadless(
     prompt,

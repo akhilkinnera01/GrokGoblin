@@ -122,7 +122,9 @@ Worktrees live in a sibling `…/<repo>.gg-worktrees/<name>` directory (so your 
 
 GrokGoblin uses grok's own extension points, so there's no separate agent runtime:
 
-- **Goblin subagents** → GrokGoblin's specialist goblins are installed as **real grok subagents** (`config.toml [subagents.roles.*]` + per-role prompt files) and spawned in parallel via grok's `Task` tool. Read-only goblins are capability-locked so they can't modify files. No SuperGrok/paid tier required.
+- **Goblin subagents** → GrokGoblin's specialist goblins are installed as **real grok subagents** (`config.toml [subagents.roles.*]` + per-role prompt files), and `gg goblins` also passes the full roster inline via grok's `--agents` so the `spawn_subagent` tool (alias `task`) is registered. Read-only goblins are capability-locked so they can't modify files. No SuperGrok/paid tier required.
+
+  > **How parallelism actually runs:** grok's in-session subagent spawning is only reliably invocable in the interactive TUI. In the default **headless** `gg goblins` path the leader spawns native subagents when the runtime allows and otherwise runs the specialist passes **in parallel itself** (concurrent tool calls) — either way you get independent specialist passes synthesized into one result. For guaranteed multi-process parallelism, use `gg goblins --tmux` (one real grok process per pane).
 
   | Goblin | Specialty | Goblin | Specialty |
   |---|---|---|---|
