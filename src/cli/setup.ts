@@ -31,16 +31,8 @@ import { commandExists } from "../utils/exec.js";
 import { ensureDir } from "../utils/toml.js";
 import { writeFileSync, readFileSync } from "fs";
 
-const BUILTIN_SKILLS = [
-  "dig",
-  "goblinplan",
-  "ralph",
-  "quest",
-  "cruise",
-  "code-review",
-  "tdd",
-  "goblins",
-];
+import { GROKGOBLIN_SKILLS } from "../utils/paths.js";
+const BUILTIN_SKILLS = GROKGOBLIN_SKILLS;
 
 function copyDirRecursive(src: string, dest: string): void {
   if (!existsSync(src)) return;

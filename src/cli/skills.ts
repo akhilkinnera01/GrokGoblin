@@ -4,6 +4,7 @@ import {
   resolveGrokHome,
   resolveSkillsDir,
   packageSkillsDir,
+  GROKGOBLIN_SKILLS,
 } from "../utils/paths.js";
 import {
   print,
@@ -45,8 +46,14 @@ function readSkillMeta(skillDir: string, name: string): SkillMeta {
 export function getInstalledSkills(grokHome: string): SkillMeta[] {
   const skillsDir = resolveSkillsDir(grokHome);
   if (!existsSync(skillsDir)) return [];
+  // Only GrokGoblin's own skills — the dir may also hold skills from other tools.
   return readdirSync(skillsDir, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && !e.name.startsWith("."))
+    .filter(
+      (e) =>
+        e.isDirectory() &&
+        !e.name.startsWith(".") &&
+        GROKGOBLIN_SKILLS.includes(e.name)
+    )
     .map((e) => readSkillMeta(join(skillsDir, e.name), e.name));
 }
 

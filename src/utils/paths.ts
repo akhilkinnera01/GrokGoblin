@@ -12,6 +12,20 @@ export const DEFAULT_FAST_MODEL = "grok-composer-2.5-fast";
 // Models exposed by the grok CLI (grok 0.2.x). Used to validate `gg config model`.
 export const KNOWN_MODELS = [DEFAULT_FRONTIER_MODEL, DEFAULT_FAST_MODEL];
 
+// The canonical set of skills GrokGoblin installs. Used both to install them and
+// to filter "gg skills list" so it shows GrokGoblin's own skills, not every
+// skill discovered in ~/.grok/skills (which may include many from other tools).
+export const GROKGOBLIN_SKILLS = [
+  "dig",
+  "goblinplan",
+  "ralph",
+  "quest",
+  "cruise",
+  "code-review",
+  "tdd",
+  "goblins",
+];
+
 // As of grok 0.2.x neither available model supports the `reasoningEffort`
 // parameter (models_cache: supports_reasoning_effort = false), so passing
 // --effort returns HTTP 400. Add model ids here as grok ships effort support.
