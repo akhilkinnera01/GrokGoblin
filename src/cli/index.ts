@@ -49,7 +49,7 @@ const BOOLEAN_FLAGS = new Set([
   "check", "force", "verbose", "team", "mcp", "skip-git-repo-check",
   "always-approve", "history", "branch", "all", "merged", "help", "version",
   "merge-agents", "continue", "no-subagents", "no-digest", "no-verify", "once",
-  "goblins", "parallel", "detach",
+  "goblins", "parallel", "detach", "relentless",
 ]);
 
 function parseArgs(argv: string[]): {

@@ -50,6 +50,11 @@ export interface LoopOptions {
   /** Wall-clock budget per iteration in ms (kills a hung "stuck" iteration). */
   iterationTimeoutMs?: number;
   /**
+   * Never stuck-abort: keep iterating (escalating model) until completion or the
+   * iteration budget is spent. For deliberately long autonomous runs.
+   */
+  relentless?: boolean;
+  /**
    * Optional control hook checked at the top of every iteration. Lets an outer
    * driver (e.g. `gg hunt`) pause/stop a long or detached run between iterations
    * without coupling the loop to goal storage. Return "stop" or "pause" to break.
@@ -532,6 +537,14 @@ async function runLoop(
       escalated = true;
       stuckRounds = 0;
       warn(`No progress — escalating maker to ${DEFAULT_FRONTIER_MODEL}.`);
+      return "escalate";
+    }
+    // Relentless mode: never give up early — keep grinding until completion or the
+    // iteration budget is spent (Codex /goal "run until correct" behavior). The
+    // budget caps total spend, so this is bounded, just not stuck-aborted.
+    if (options.relentless) {
+      stuckRounds = 0;
+      warn("No progress — relentless mode, continuing until the iteration budget.");
       return "escalate";
     }
     warn("No progress after escalation — stopping to avoid burning tokens.");

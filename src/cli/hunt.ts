@@ -43,6 +43,7 @@ interface GoalContract {
   constraints: string[];
   workers: number;
   budget: { maxIterations: number; maxTurns: number };
+  relentless: boolean;
   detached: boolean;
   history: { ts: string; event: string }[];
   result?: { completed: boolean; iterations: number };
@@ -162,6 +163,7 @@ async function pursue(cwd: string, c: GoalContract): Promise<void> {
     noVerify: !c.verify,
     maxIterations: c.budget.maxIterations,
     maxTurns: c.budget.maxTurns,
+    relentless: c.relentless,
     skipGitRepoCheck: true,
     controlCheck,
   };
@@ -302,8 +304,9 @@ export async function runHunt(
       maxIterations: flags["max-iterations"] ? Number(flags["max-iterations"]) : DEFAULT_BUDGET.maxIterations,
       maxTurns: flags["max-turns"] ? Number(flags["max-turns"]) : DEFAULT_BUDGET.maxTurns,
     },
+    relentless: Boolean(flags["relentless"]),
     detached: Boolean(flags["detach"]),
-    history: [{ ts: new Date().toISOString(), event: `created (strategy=${t.strategy})` }],
+    history: [{ ts: new Date().toISOString(), event: `created (strategy=${t.strategy}${flags["relentless"] ? ", relentless" : ""})` }],
   };
   saveContract(cwd, contract);
 
