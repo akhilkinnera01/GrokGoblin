@@ -1,8 +1,17 @@
 import { existsSync, mkdirSync, writeFileSync, appendFileSync, readFileSync } from "fs";
 import { join, dirname } from "path";
-import { resolveGrokHome, DEFAULT_FAST_MODEL, resolveProjectMemoryPath } from "../utils/paths.js";
+import {
+  resolveGrokHome,
+  DEFAULT_FAST_MODEL,
+  DEFAULT_FRONTIER_MODEL,
+  resolveProjectMemoryPath,
+} from "../utils/paths.js";
 import { isGitRepo, gitRepoRoot, spawnGrokHeadless } from "../utils/exec.js";
 import { commandExists } from "../utils/exec.js";
+import { resolveVerifyCommand, runCheck, type CheckResult } from "../utils/verify.js";
+import { runChecker } from "./checker.js";
+import { AGENT_DEFINITIONS } from "../agents/definitions.js";
+import { buildRolePrompt } from "../config/subagents.js";
 import {
   print,
   header,
@@ -32,7 +41,23 @@ export interface LoopOptions {
   bestOf?: number;
   /** Write a memory digest at the end of the run (default true). */
   digest?: boolean;
+  /** Explicit deterministic verification command (overrides auto-detection). */
+  verify?: string;
+  /** Disable the deterministic verification gate entirely. */
+  noVerify?: boolean;
+  /** grok --max-turns cap per iteration (bounds runaway exploration). */
+  maxTurns?: number;
+  /** Wall-clock budget per iteration in ms (kills a hung "stuck" iteration). */
+  iterationTimeoutMs?: number;
 }
+
+// Loop budgets — tuned so a stuck run recovers/aborts instead of burning tokens.
+const DEFAULT_MAX_TURNS = 40;
+const DEFAULT_ITERATION_TIMEOUT_MS = 20 * 60 * 1000; // 20 min
+const DEFAULT_CHECK_TIMEOUT_MS = 10 * 60 * 1000; // 10 min for the verify command
+// Consecutive no-progress iterations before we escalate the maker model; one more
+// stale round after escalation aborts the run (state is preserved for resume).
+const STUCK_ROUNDS_BEFORE_ESCALATE = 2;
 
 // Keep the injected project-memory file bounded so it doesn't bloat the prompt.
 const MAX_MEMORY_FILE_BYTES = 24_000;
@@ -85,45 +110,94 @@ function lastIterationSummary(progress: string): string {
   return last.replace(/\s+/g, " ").trim().slice(0, 400);
 }
 
+// Append one structured iteration record to the run log. `phase` is the maker's
+// stated intent (CLAIM/CONT/TIMEOUT) and `checkOk` is the harness verdict (null
+// when no check ran), so the log alone explains why the loop did what it did.
+function appendLog(
+  logPath: string,
+  iteration: number,
+  model: string,
+  status: number,
+  phase: string,
+  checkOk: boolean | null
+): void {
+  appendFileSync(
+    logPath,
+    JSON.stringify({
+      iteration,
+      ts: new Date().toISOString(),
+      model,
+      status,
+      phase,
+      checkOk,
+    }) + "\n",
+    "utf-8"
+  );
+}
+
 // Back-compat alias for the previous public name.
 export type CruiseOptions = LoopOptions;
 
 interface LoopSpec {
-  /** Display + state-dir label, e.g. "cruise" | "quest" | "ralph". */
+  /** Display + state-dir label, e.g. "cruise" | "quest" | "ralph" | "goblins". */
   kind: string;
   /** Human title for the header banner. */
   title: string;
   /** Builds the per-iteration prompt. */
-  buildPrompt: (ctx: {
-    goal: string;
-    iteration: number;
-    maxIterations: number;
-    progressSoFar: string;
-  }) => string;
+  buildPrompt: (ctx: PromptCtx) => string;
+  /** Extra grok args appended every iteration (e.g. --agents roster for goblins). */
+  extraArgs?: string[];
 }
 
-// Reusable verification gate appended to every loop prompt so "verify before
-// done" just happens by default — never claim completion on unverified code.
-function verificationGate(): string[] {
-  return [
-    "## Verification gate (mandatory before completing)",
-    `- You may ONLY output \`${COMPLETE_SENTINEL}\` if you have just RUN the project's build/tests/linters and they PASS.`,
-    "- If there is no test/build command, state explicitly how you verified the goal is met.",
-    "- If verification fails or you couldn't verify, keep going — do NOT claim completion.",
-    "",
-    "## Required final line",
-    "End your response with EXACTLY one of these on its own line:",
-    `- \`${COMPLETE_SENTINEL}\` — goal fully achieved AND verified (tests/build pass).`,
-    `- \`${CONTINUE_SENTINEL}\` — more work remains for the next iteration.`,
-  ];
-}
-
-function buildCruisePrompt(ctx: {
+interface PromptCtx {
   goal: string;
   iteration: number;
   maxIterations: number;
   progressSoFar: string;
-}): string {
+  /** The deterministic command the harness will run to judge completion, if any. */
+  verifyCommand?: string | null;
+  /** Failure output from the last verification run, fed back for a targeted fix. */
+  verifyFeedback?: string;
+}
+
+// Reusable verification gate appended to every loop prompt so "verify before
+// done" just happens by default — never claim completion on unverified code.
+// The harness ALSO runs the deterministic check itself after each iteration, so
+// the sentinel alone never ends the loop — it must coincide with a green check.
+function verificationGate(ctx?: PromptCtx): string[] {
+  const lines: string[] = ["## Verification gate (mandatory before completing)"];
+  if (ctx?.verifyCommand) {
+    lines.push(
+      `- After this iteration, the harness will run \`${ctx.verifyCommand}\` itself. Completion is only accepted when that command PASSES — you cannot self-certify past it.`,
+      `- Before claiming completion, RUN \`${ctx.verifyCommand}\` yourself and make it pass.`
+    );
+  } else {
+    lines.push(
+      `- After this iteration, an independent QC reviewer agent will inspect your work against the goal. Completion is only accepted if it passes review.`,
+      "- If a build/test command exists, run it and make it pass before claiming completion.",
+      "- Otherwise state explicitly, with concrete evidence, how the goal is verifiably met."
+    );
+  }
+  if (ctx?.verifyFeedback && ctx.verifyFeedback.trim()) {
+    lines.push(
+      "",
+      "## Last verification FAILED — fix this first",
+      "```",
+      tail(ctx.verifyFeedback.trim(), 1500),
+      "```"
+    );
+  }
+  lines.push(
+    "",
+    "## Required final line",
+    "End your response with EXACTLY one of these on its own line:",
+    `- \`${COMPLETE_SENTINEL}\` — goal fully achieved AND verified.`,
+    `- \`${CONTINUE_SENTINEL}\` — more work remains for the next iteration.`
+  );
+  return lines;
+}
+
+function buildCruisePrompt(ctx: PromptCtx): string {
   return [
     "You are running autonomously inside `gg cruise` — a headless loop that re-invokes you each iteration to drive a task end-to-end.",
     `Iteration ${ctx.iteration} of at most ${ctx.maxIterations}.`,
@@ -147,16 +221,11 @@ function buildCruisePrompt(ctx: {
     "- Recall relevant prior decisions from memory (memory_search) before changing direction.",
     "- Keep your response focused: what you did, what phase you're in, what remains.",
     "",
-    ...verificationGate(),
+    ...verificationGate(ctx),
   ].join("\n");
 }
 
-function buildQuestPrompt(ctx: {
-  goal: string;
-  iteration: number;
-  maxIterations: number;
-  progressSoFar: string;
-}): string {
+function buildQuestPrompt(ctx: PromptCtx): string {
   return [
     "You are running autonomously inside `gg quest` — a durable, checkpointed multi-goal loop that re-invokes you each iteration.",
     `Iteration ${ctx.iteration} of at most ${ctx.maxIterations}.`,
@@ -173,16 +242,11 @@ function buildQuestPrompt(ctx: {
     "- For the sub-goal you complete, record concrete completion evidence (commands run + result).",
     "- Recall prior decisions from memory (memory_search) before changing direction.",
     "",
-    ...verificationGate(),
+    ...verificationGate(ctx),
   ].join("\n");
 }
 
-function buildRalphPrompt(ctx: {
-  goal: string;
-  iteration: number;
-  maxIterations: number;
-  progressSoFar: string;
-}): string {
+function buildRalphPrompt(ctx: PromptCtx): string {
   return [
     "You are running autonomously inside `gg ralph` — a persistent completion loop for a single task that re-invokes you each iteration until it's truly done.",
     `Iteration ${ctx.iteration} of at most ${ctx.maxIterations}.`,
@@ -198,7 +262,7 @@ function buildRalphPrompt(ctx: {
     "- Reflect briefly on what's left and tackle the most important remaining piece.",
     "- Do not re-do completed work. Recall prior decisions from memory (memory_search).",
     "",
-    ...verificationGate(),
+    ...verificationGate(ctx),
   ].join("\n");
 }
 
@@ -231,9 +295,27 @@ async function runLoop(
     Number.isFinite(options.bestOf) && (options.bestOf as number) > 1
       ? Math.floor(options.bestOf as number)
       : undefined;
-  const model = options.model ?? (options.fast ? DEFAULT_FAST_MODEL : undefined);
+  // Model tiering: an explicit --model (or --fast) pins the model and disables
+  // escalation. Otherwise the loop is cost-tiered — it starts on the cheap/fast
+  // model and only escalates to the frontier model when it gets stuck, which is
+  // the main token win over running every iteration on the frontier model.
+  const pinnedModel = options.model ?? (options.fast ? DEFAULT_FAST_MODEL : undefined);
+  const tieringEnabled = !pinnedModel;
+  let currentModel = pinnedModel ?? DEFAULT_FAST_MODEL;
+
+  const maxTurns =
+    Number.isFinite(options.maxTurns) && (options.maxTurns as number) > 0
+      ? Math.floor(options.maxTurns as number)
+      : DEFAULT_MAX_TURNS;
+  const iterationTimeoutMs =
+    Number.isFinite(options.iterationTimeoutMs) && (options.iterationTimeoutMs as number) > 0
+      ? Math.floor(options.iterationTimeoutMs as number)
+      : DEFAULT_ITERATION_TIMEOUT_MS;
 
   const repoRoot = gitRepoRoot(cwd) ?? cwd;
+  // Deterministic verification gate (ground truth). null => fall back to an
+  // independent QC reviewer agent when the maker claims completion.
+  const verifyCommand = resolveVerifyCommand(repoRoot, options.verify, Boolean(options.noVerify));
   const runId = `${Date.now()}`;
   const runDir = join(repoRoot, ".grokgoblin", spec.kind, runId);
   mkdirSync(runDir, { recursive: true });
@@ -243,30 +325,54 @@ async function runLoop(
   writeFileSync(progressPath, "", "utf-8");
 
   header(`GrokGoblin ${spec.title}`);
-  print(`${dim("goal:")}  ${goal}`);
-  print(`${dim("model:")} ${model ?? "(grok default)"}`);
-  print(`${dim("max:")}   ${maxIterations} iterations`);
-  print(`${dim("state:")} ${runDir}`);
+  print(`${dim("goal:")}   ${goal}`);
+  print(
+    `${dim("model:")}  ${
+      pinnedModel
+        ? pinnedModel
+        : `${currentModel} → ${DEFAULT_FRONTIER_MODEL} on stall (tiered)`
+    }`
+  );
+  print(`${dim("verify:")} ${verifyCommand ?? "independent QC reviewer (no test command found)"}`);
+  print(`${dim("max:")}    ${maxIterations} iterations · ${maxTurns} turns/iter`);
+  print(`${dim("state:")}  ${runDir}`);
   print("");
 
-  const grokArgs = ["--always-approve", "--experimental-memory", "--output-format", "plain"];
+  const baseGrokArgs = ["--always-approve", "--experimental-memory", "--output-format", "plain"];
   // segments compaction persists compacted history as grep-able markdown, so a
   // long iteration can recover earlier detail instead of losing it to the window.
-  grokArgs.push("--compaction-mode", "segments");
+  baseGrokArgs.push("--compaction-mode", "segments");
+  // Bound each iteration's agent turns so a confused run can't explore forever.
+  baseGrokArgs.push("--max-turns", String(maxTurns));
   // Isolate the leader per MCP-config fingerprint so loop iterations honor the
   // current MCP servers instead of a stale leader's cached connections.
-  grokArgs.push(...leaderSocketArgs(grokHome, cwd));
-  if (model) grokArgs.push("-m", model);
+  baseGrokArgs.push(...leaderSocketArgs(grokHome, cwd));
   // --best-of-n runs the turn N ways in parallel and keeps the best (headless only).
   if (bestOf) {
-    grokArgs.push("--best-of-n", String(bestOf));
+    baseGrokArgs.push("--best-of-n", String(bestOf));
+  }
+
+  // Regression oracle baseline: snapshot whether the check passes BEFORE any work.
+  // A task that starts red just needs to go green; a task that starts green must
+  // not be allowed to regress to red while the agent claims "done".
+  let baselineGreen = false;
+  if (verifyCommand) {
+    step(`Baseline check: ${verifyCommand}`);
+    const baseline = runCheck(verifyCommand, repoRoot, DEFAULT_CHECK_TIMEOUT_MS);
+    baselineGreen = baseline.ok;
+    print(dim(baselineGreen ? "  baseline: passing (must stay green)" : "  baseline: failing (target: make it pass)"));
   }
 
   let completed = false;
   let iterationsRun = 0;
+  let verifyFeedback = "";
+  let stuckRounds = 0;
+  let escalated = false;
+  let prevSignature = "";
+
   for (let i = 1; i <= maxIterations; i++) {
     iterationsRun = i;
-    step(`Iteration ${i}/${maxIterations}...`);
+    step(`Iteration ${i}/${maxIterations} (${currentModel})...`);
     const progressSoFar = existsSync(progressPath)
       ? readFileSync(progressPath, "utf-8")
       : "";
@@ -274,27 +380,33 @@ async function runLoop(
       goal,
       iteration: i,
       maxIterations,
-      progressSoFar: tail(progressSoFar, 6000),
+      // Lean context: after the first round, re-send only a short progress tail
+      // (not the whole transcript) so per-iteration cost doesn't grow O(N²).
+      progressSoFar: tail(progressSoFar, i === 1 ? 4000 : 2000),
+      verifyCommand,
+      verifyFeedback,
     });
 
+    const grokArgs = ["-m", currentModel, ...baseGrokArgs, ...(spec.extraArgs ?? [])];
     const result = spawnGrokHeadless(
       prompt,
       grokArgs,
       { ...process.env, GROK_HOME: grokHome },
-      grokBin
+      grokBin,
+      iterationTimeoutMs
     );
 
     const output = (result.stdout || result.stderr || "").trim();
-    appendFileSync(
-      logPath,
-      JSON.stringify({
-        iteration: i,
-        ts: new Date().toISOString(),
-        status: result.status,
-        output,
-      }) + "\n",
-      "utf-8"
-    );
+
+    // A hung iteration (wall-clock timeout) is the "agent got stuck" failure —
+    // recover by escalating/aborting instead of blocking the loop forever.
+    if (result.timedOut) {
+      warn(`Iteration ${i} hit the ${Math.round(iterationTimeoutMs / 60000)}m time budget and was stopped.`);
+      appendLog(logPath, i, currentModel, result.status, "TIMEOUT", null);
+      const action = stallAction();
+      if (action === "abort") break;
+      continue;
+    }
 
     if (!result.ok && !output) {
       warn(`Iteration ${i} failed (grok exit ${result.status}). Stopping.`);
@@ -304,16 +416,84 @@ async function runLoop(
 
     const summary = stripSentinels(output);
     appendFileSync(progressPath, `\n## Iteration ${i}\n${summary.trim()}\n`, "utf-8");
-
-    // Show a compact view of what happened this iteration.
     print(dim(indent(tail(summary, 800))));
 
-    if (isComplete(output)) {
+    const modelClaimsComplete = isComplete(output);
+
+    // ── Verification gate ────────────────────────────────────────────────
+    // Deterministic check is the primary gate (ground truth, ~0 model tokens).
+    // When no check exists, an independent QC reviewer is consulted ONLY when the
+    // maker claims completion (so we never pay for review on every iteration).
+    let verified = false;
+    let checkSignature = summary.slice(-400);
+    if (verifyCommand) {
+      const check: CheckResult = runCheck(verifyCommand, repoRoot, DEFAULT_CHECK_TIMEOUT_MS);
+      checkSignature = `${check.ok}:${check.output.slice(-400)}`;
+      if (check.ok) {
+        ok(`  check passed: ${verifyCommand}`);
+        verifyFeedback = "";
+        verified = modelClaimsComplete;
+        if (!modelClaimsComplete) {
+          info("  check is green but more sub-goals remain — continuing.");
+        }
+      } else {
+        warn(`  check failed: ${verifyCommand}`);
+        verifyFeedback = check.output;
+        verified = false;
+      }
+      appendLog(logPath, i, currentModel, result.status, modelClaimsComplete ? "CLAIM" : "CONT", check.ok);
+    } else if (modelClaimsComplete) {
+      step("  running independent QC reviewer...");
+      const review = runChecker(goal, repoRoot, grokHome, grokBin, leaderSocketArgs(grokHome, cwd));
+      checkSignature = `${review.pass}:${review.feedback.slice(-400)}`;
+      if (review.pass) {
+        ok("  QC reviewer: PASS");
+        verified = true;
+        verifyFeedback = "";
+      } else {
+        warn("  QC reviewer: FAIL");
+        verifyFeedback = review.feedback;
+        verified = false;
+      }
+      appendLog(logPath, i, currentModel, result.status, "CLAIM", review.pass);
+    } else {
+      appendLog(logPath, i, currentModel, result.status, "CONT", null);
+    }
+
+    if (verified) {
       completed = true;
-      ok(`Goal reported complete after ${i} iteration(s).`);
+      ok(`Goal complete and verified after ${i} iteration(s).`);
       break;
     }
-    info(`Iteration ${i} done — continuing.`);
+
+    // ── Stuck detection ──────────────────────────────────────────────────
+    // No change in the verification signature across rounds => not progressing.
+    if (checkSignature === prevSignature) {
+      stuckRounds++;
+    } else {
+      stuckRounds = 0;
+      prevSignature = checkSignature;
+    }
+    if (stuckRounds >= STUCK_ROUNDS_BEFORE_ESCALATE) {
+      if (stallAction() === "abort") break;
+    } else {
+      info(`Iteration ${i} done — continuing.`);
+    }
+  }
+
+  // Escalate the maker model on stall, or abort if already escalated. Returns
+  // "abort" when the loop should stop (state is preserved on disk for resume).
+  function stallAction(): "escalate" | "abort" {
+    if (tieringEnabled && !escalated && currentModel !== DEFAULT_FRONTIER_MODEL) {
+      currentModel = DEFAULT_FRONTIER_MODEL;
+      escalated = true;
+      stuckRounds = 0;
+      warn(`No progress — escalating maker to ${DEFAULT_FRONTIER_MODEL}.`);
+      return "escalate";
+    }
+    warn("No progress after escalation — stopping to avoid burning tokens.");
+    print(dim(`Resume from saved state: ${runDir}`));
+    return "abort";
   }
 
   print("");
@@ -354,6 +534,73 @@ export async function runRalph(cwd: string, goal: string, options: LoopOptions =
     kind: "ralph",
     title: "Ralph",
     buildPrompt: buildRalphPrompt,
+  }, options);
+}
+
+// Verified Goblins loop: the multi-agent mode, run through the SAME verification
+// gate / budgets / model-tiering / stuck-detection as cruise. Each iteration the
+// leader fans the work out to specialist goblins (registered via --agents), then
+// the harness — not the leader — decides completion via the deterministic check
+// (or an independent QC reviewer when there is none). That's what makes Goblins
+// "run until correct" instead of fire-and-forget.
+function buildGoblinsPrompt(
+  ctx: PromptCtx,
+  workerCount: number,
+  roleNames: string[],
+  preferredRole: string
+): string {
+  return [
+    "You are the LEAD GOBLIN orchestrating a multi-goblin effort inside `gg goblins` —",
+    "a headless loop that re-invokes you each iteration until the work is verifiably correct.",
+    `Iteration ${ctx.iteration} of at most ${ctx.maxIterations}.`,
+    "",
+    "## Goal",
+    ctx.goal,
+    "",
+    "## How to work this iteration",
+    `- Decompose the remaining work into UP TO ${workerCount} independent specialist passes, each playing one of the goblin roles: ${roleNames.join(", ")}.`,
+    preferredRole ? `- Bias toward the \`${preferredRole}\` role.` : "",
+    "- PREFER spawning them as parallel subagents via `spawn_subagent` (alias `task`) if it is invocable; if not, run the passes yourself IN PARALLEL (parallel tool calls / background commands) — never stall on an unavailable tool.",
+    "- Each pass must have a clear, self-contained scope. Then integrate the passes and resolve conflicts.",
+    "",
+    "## Progress so far (from previous iterations)",
+    ctx.progressSoFar.trim() || "(none yet — this is the first iteration)",
+    "",
+    "## Instructions",
+    "- Make concrete, integrated progress this iteration; do not re-do completed work.",
+    "- Recall prior decisions from memory (memory_search) before changing direction.",
+    "",
+    ...verificationGate(ctx),
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export async function runGoblinsVerified(
+  cwd: string,
+  task: string,
+  workerCount: number,
+  preferredRole: string,
+  options: LoopOptions = {}
+): Promise<void> {
+  const roleNames = Object.keys(AGENT_DEFINITIONS);
+  // The roster is what makes spawn_subagent available to the leader; even when
+  // the spawned worker is unreliable headless, the leader still falls back to
+  // parallel self-work, and the harness gate is what guarantees correctness.
+  const agentsMap: Record<string, { description: string; prompt: string; model: string }> = {};
+  for (const [name, def] of Object.entries(AGENT_DEFINITIONS)) {
+    agentsMap[name] = {
+      description: def.description,
+      prompt: buildRolePrompt(name, def),
+      model: def.model,
+    };
+  }
+
+  return runLoop(cwd, task, {
+    kind: "goblins",
+    title: "Goblins",
+    buildPrompt: (ctx) => buildGoblinsPrompt(ctx, workerCount, roleNames, preferredRole),
+    extraArgs: ["--agents", JSON.stringify(agentsMap)],
   }, options);
 }
 

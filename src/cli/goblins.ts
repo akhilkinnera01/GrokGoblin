@@ -32,7 +32,25 @@ import {
 import { ensureDir, writeJsonFile, readJsonFile } from "../utils/toml.js";
 import { ggSessionId } from "../utils/paths.js";
 import { leaderSocketArgs } from "../utils/leader.js";
+import { runGoblinsVerified } from "./cruise.js";
 import { spawnSync } from "child_process";
+
+// Parse the optional `N[:role]` prefix from a goblins task string.
+function parseGoblinsTask(taskStr: string): {
+  workerCount: number;
+  preferredRole: string;
+  task: string;
+} {
+  const m = taskStr.match(/^(\d+)(?::([\w-]+))?\s+(.+)$/);
+  if (m) {
+    return {
+      workerCount: Math.min(8, Math.max(1, parseInt(m[1]!))),
+      preferredRole: m[2] ?? "",
+      task: m[3]!,
+    };
+  }
+  return { workerCount: 3, preferredRole: "", task: taskStr };
+}
 
 interface TeamWorkerConfig {
   id: number;
@@ -55,10 +73,10 @@ interface TeamState {
 }
 
 function resolveTeamStatePath(cwd: string, teamName: string): string {
-  return join(resolveGgStateDir(cwd), "state", "team", teamName, "state.json");
+  return join(resolveGgStateDir(cwd), "state", "goblins", teamName, "state.json");
 }
 
-export async function runTeam(
+export async function runGoblins(
   cwd: string,
   args: string[],
   flags: Record<string, string | boolean | number>
@@ -67,29 +85,62 @@ export async function runTeam(
 
   switch (subCmd) {
     case "status":
-      await runTeamStatus(cwd, args[1]);
+      await runGoblinsStatus(cwd, args[1]);
       break;
     case "shutdown":
-      await runTeamShutdown(cwd, args[1], flags);
+      await runGoblinsShutdown(cwd, args[1], flags);
       break;
     case "resume":
-      await runTeamResume(cwd, args[1]);
+      await runGoblinsResume(cwd, args[1]);
       break;
     default:
-      // Default: orchestrate real grok subagents in one session (no tmux).
-      // `--tmux` keeps the legacy multi-pane interactive mode.
+      // Default: a VERIFIED multi-goblin loop — fan work out to specialist
+      // goblins, then run the same deterministic/QC gate as cruise until correct.
+      // `--once` keeps the legacy single-shot orchestration; `--tmux` the legacy
+      // multi-pane interactive mode.
       if (flags["tmux"]) {
-        await runTeamLaunch(cwd, args, flags);
+        await runGoblinsTmux(cwd, args, flags);
+      } else if (flags["once"]) {
+        await runGoblinsOnce(cwd, args, flags);
       } else {
-        await runTeamNative(cwd, args, flags);
+        await runGoblinsLoop(cwd, args, flags);
       }
       break;
   }
 }
 
-// Native team: a single grok "leader" session that fans the task out to parallel
-// role-subagents via grok's Task tool, using the roles GrokGoblin installs.
-async function runTeamNative(
+// Default Goblins mode: a VERIFIED loop. Fans work out to specialist goblins and
+// loops through the same deterministic/QC gate as cruise until the work is correct.
+async function runGoblinsLoop(
+  cwd: string,
+  args: string[],
+  flags: Record<string, string | boolean | number>
+): Promise<void> {
+  const { workerCount, preferredRole, task } = parseGoblinsTask(args.join(" ").trim());
+  if (!task) {
+    warn("gg goblins requires a task description");
+    print('  Example: gg goblins 3 "refactor the auth module and add tests"');
+    print('  Single-shot (legacy): gg goblins --once 3 "..."');
+    print('  Tmux panes (legacy):   gg goblins --tmux 3:executor "..."');
+    process.exit(1);
+  }
+  const maxRaw = flags["max-iterations"] as string | undefined;
+  await runGoblinsVerified(cwd, task, workerCount, preferredRole, {
+    maxIterations: maxRaw ? Number(maxRaw) : undefined,
+    model: flags["model"] as string | undefined,
+    fast: Boolean(flags["fast"]),
+    skipGitRepoCheck: Boolean(flags["skip-git-repo-check"]),
+    bestOf: flags["best-of"] ? Number(flags["best-of"]) : undefined,
+    digest: !flags["no-digest"],
+    verify: flags["verify"] as string | undefined,
+    noVerify: Boolean(flags["no-verify"]),
+    maxTurns: flags["max-turns"] ? Number(flags["max-turns"]) : undefined,
+  });
+}
+
+// Legacy single-shot: one grok "leader" session that fans the task out via the
+// goblin roster, no verification loop (`gg goblins --once`).
+async function runGoblinsOnce(
   cwd: string,
   args: string[],
   flags: Record<string, string | boolean | number>
@@ -111,9 +162,9 @@ async function runTeamNative(
     task = workerMatch[3]!;
   }
   if (!task) {
-    warn("gg team requires a task description");
-    print('  Example: gg team 3 "refactor the auth module and add tests"');
-    print('  Legacy tmux panes: gg team --tmux 3:executor "..."');
+    warn("gg goblins requires a task description");
+    print('  Example: gg goblins 3 "refactor the auth module and add tests"');
+    print('  Legacy tmux panes: gg goblins --tmux 3:executor "..."');
     process.exit(1);
   }
 
@@ -129,7 +180,7 @@ async function runTeamNative(
   print("");
 
   const prompt = [
-    "You are the TEAM LEADER orchestrating a multi-agent effort.",
+    "You are the LEAD GOBLIN orchestrating a multi-goblin effort.",
     "",
     `## Task\n${task}`,
     "",
@@ -181,19 +232,19 @@ async function runTeamNative(
   if (output) print(output);
   print("");
   if (result.ok) {
-    ok("Team run complete.");
+    ok("Goblins run complete.");
   } else {
-    warn(`Team run exited with status ${result.status}.`);
+    warn(`Goblins run exited with status ${result.status}.`);
   }
 }
 
-async function runTeamLaunch(
+async function runGoblinsTmux(
   cwd: string,
   args: string[],
   flags: Record<string, string | boolean | number>
 ): Promise<void> {
   if (!tmuxAvailable()) {
-    warn("Team mode requires tmux. Install it first:");
+    warn("Goblins tmux mode requires tmux. Install it first:");
     print("  brew install tmux (macOS)");
     print("  sudo apt install tmux (Ubuntu/Debian)");
     process.exit(1);
@@ -223,13 +274,13 @@ async function runTeamLaunch(
   }
 
   if (!task) {
-    warn("gg team requires a task description");
-    print('  Example: gg team 3:executor "fix the failing tests"');
+    warn("gg goblins requires a task description");
+    print('  Example: gg goblins 3:executor "fix the failing tests"');
     process.exit(1);
   }
 
   const sessionId = ggSessionId();
-  const teamName = `gg-team-${sessionId.slice(-6)}`;
+  const teamName = `gg-goblins-${sessionId.slice(-6)}`;
   const grokHome = resolveGrokHome();
   const grokBin = process.env["GROK_BIN"] ?? "grok";
   const fastModel = (flags["spark"] as string) ?? DEFAULT_FAST_MODEL;
@@ -243,7 +294,7 @@ async function runTeamLaunch(
   const teamStateDir = join(
     resolveGgStateDir(cwd),
     "state",
-    "team",
+    "goblins",
     teamName
   );
   ensureDir(teamStateDir);
@@ -304,25 +355,25 @@ async function runTeamLaunch(
   writeJsonFile(join(teamStateDir, "state.json"), { ...teamState, workers });
 
   print("");
-  ok(`Team ${teamName} running with ${workerCount} workers.`);
+  ok(`Goblins ${teamName} running with ${workerCount} workers.`);
   print("");
-  print(dim("Monitor with: gg team status " + teamName));
-  print(dim("Shutdown with: gg team shutdown " + teamName));
+  print(dim("Monitor with: gg goblins status " + teamName));
+  print(dim("Shutdown with: gg goblins shutdown " + teamName));
   print(dim("Attach to worker: tmux attach -t " + teamName + "-w1"));
 }
 
-async function runTeamStatus(
+async function runGoblinsStatus(
   cwd: string,
   teamName?: string
 ): Promise<void> {
-  header("Team Status");
+  header("Goblins Status");
 
   if (!teamName) {
     const sessions = tmuxListSessions().filter((s) =>
-      s.startsWith("gg-team-")
+      s.startsWith("gg-goblins-")
     );
     if (sessions.length === 0) {
-      print(dim("No active team sessions."));
+      print(dim("No active goblins sessions."));
       return;
     }
     for (const s of sessions) {
@@ -334,17 +385,17 @@ async function runTeamStatus(
   const stateDir = join(
     resolveGgStateDir(cwd),
     "state",
-    "team",
+    "goblins",
     teamName
   );
   const state = readJsonFile<TeamState>(join(stateDir, "state.json"));
 
   if (!state) {
-    warn(`No state found for team: ${teamName}`);
+    warn(`No state found for goblins: ${teamName}`);
     return;
   }
 
-  print(dim(`Team: ${state.teamName}`));
+  print(dim(`Goblins: ${state.teamName}`));
   print(dim(`Task: ${state.task}`));
   print(dim(`Status: ${state.status}`));
   print(dim(`Workers: ${state.workerCount}`));
@@ -361,17 +412,17 @@ async function runTeamStatus(
   }
 }
 
-async function runTeamShutdown(
+async function runGoblinsShutdown(
   cwd: string,
   teamName?: string,
   flags: Record<string, string | boolean | number> = {}
 ): Promise<void> {
   if (!teamName) {
-    warn("Specify a team name: gg team shutdown <team-name>");
+    warn("Specify a goblins session name: gg goblins shutdown <team-name>");
     process.exit(1);
   }
 
-  header(`Shutting down team: ${teamName}`);
+  header(`Shutting down goblins: ${teamName}`);
 
   const sessions = tmuxListSessions().filter((s) =>
     s.startsWith(teamName)
@@ -383,12 +434,12 @@ async function runTeamShutdown(
     ok(`  ${session} stopped`);
   }
 
-  ok(`Team ${teamName} shut down.`);
+  ok(`Goblins ${teamName} shut down.`);
 }
 
-async function runTeamResume(cwd: string, teamName?: string): Promise<void> {
+async function runGoblinsResume(cwd: string, teamName?: string): Promise<void> {
   if (!teamName) {
-    warn("Specify a team name: gg team resume <team-name>");
+    warn("Specify a goblins session name: gg goblins resume <team-name>");
     process.exit(1);
   }
 
@@ -397,11 +448,11 @@ async function runTeamResume(cwd: string, teamName?: string): Promise<void> {
   );
 
   if (sessions.length === 0) {
-    warn(`No running sessions found for team: ${teamName}`);
+    warn(`No running sessions found for goblins: ${teamName}`);
     return;
   }
 
-  print(dim(`Resuming team: ${teamName}`));
+  print(dim(`Resuming goblins: ${teamName}`));
   print(dim(`Active sessions: ${sessions.join(", ")}`));
 
   const { tmuxAttach } = await import("../utils/exec.js");

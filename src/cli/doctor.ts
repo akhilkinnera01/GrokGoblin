@@ -251,10 +251,10 @@ export async function runDoctor(
   if (options.team) {
     results.push(
       warn_check(
-        "tmux (for team mode)",
+        "tmux (for goblins --tmux mode)",
         commandExists("tmux"),
-        "tmux found — team mode available",
-        "tmux not found — install it for team mode",
+        "tmux found — goblins --tmux mode available",
+        "tmux not found — install it for goblins --tmux mode",
         "brew install tmux"
       )
     );
