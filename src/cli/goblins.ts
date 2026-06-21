@@ -33,6 +33,7 @@ import { ensureDir, writeJsonFile, readJsonFile } from "../utils/toml.js";
 import { ggSessionId } from "../utils/paths.js";
 import { leaderSocketArgs } from "../utils/leader.js";
 import { runGoblinsVerified } from "./cruise.js";
+import { runGoblinsParallel } from "./parallel.js";
 import { spawnSync } from "child_process";
 
 // Parse the optional `N[:role]` prefix from a goblins task string.
@@ -102,6 +103,8 @@ export async function runGoblins(
         await runGoblinsTmux(cwd, args, flags);
       } else if (flags["once"]) {
         await runGoblinsOnce(cwd, args, flags);
+      } else if (flags["parallel"]) {
+        await runGoblinsParallelLoop(cwd, args, flags);
       } else {
         await runGoblinsLoop(cwd, args, flags);
       }
@@ -126,6 +129,33 @@ async function runGoblinsLoop(
   }
   const maxRaw = flags["max-iterations"] as string | undefined;
   await runGoblinsVerified(cwd, task, workerCount, preferredRole, {
+    maxIterations: maxRaw ? Number(maxRaw) : undefined,
+    model: flags["model"] as string | undefined,
+    fast: Boolean(flags["fast"]),
+    skipGitRepoCheck: Boolean(flags["skip-git-repo-check"]),
+    bestOf: flags["best-of"] ? Number(flags["best-of"]) : undefined,
+    digest: !flags["no-digest"],
+    verify: flags["verify"] as string | undefined,
+    noVerify: Boolean(flags["no-verify"]),
+    maxTurns: flags["max-turns"] ? Number(flags["max-turns"]) : undefined,
+  });
+}
+
+// Parallel mode: split into independent units, run them as parallel grok
+// processes in isolated worktrees, integrate, then verify (`gg goblins --parallel`).
+async function runGoblinsParallelLoop(
+  cwd: string,
+  args: string[],
+  flags: Record<string, string | boolean | number>
+): Promise<void> {
+  const { workerCount, task } = parseGoblinsTask(args.join(" ").trim());
+  if (!task) {
+    warn("gg goblins --parallel requires a task description");
+    print('  Example: gg goblins --parallel 4 "add a unit test file for each module"');
+    process.exit(1);
+  }
+  const maxRaw = flags["max-iterations"] as string | undefined;
+  await runGoblinsParallel(cwd, task, workerCount, {
     maxIterations: maxRaw ? Number(maxRaw) : undefined,
     model: flags["model"] as string | undefined,
     fast: Boolean(flags["fast"]),

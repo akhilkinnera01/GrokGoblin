@@ -1,4 +1,4 @@
-import { spawnSync, type SpawnSyncOptions } from "child_process";
+import { spawnSync, spawn, type SpawnSyncOptions } from "child_process";
 
 export interface RunResult {
   stdout: string;
@@ -92,6 +92,62 @@ export function spawnGrokHeadless(
   // spawnSync sets status=null on timeout; surface it as a non-ok result with a
   // clear marker so the caller can treat a hung iteration as "stuck", not "done".
   return result;
+}
+
+// Async variant of spawnGrokHeadless so multiple workers can run truly in
+// parallel (spawnSync blocks the event loop and cannot). Used by the parallel
+// Goblins fan-out, where each worker runs in its own git worktree.
+export function spawnGrokHeadlessAsync(
+  prompt: string,
+  args: string[],
+  opts: {
+    env?: NodeJS.ProcessEnv;
+    grokBin?: string;
+    cwd?: string;
+    timeoutMs?: number;
+  } = {}
+): Promise<RunResult> {
+  const { env = process.env, grokBin = "grok", cwd, timeoutMs } = opts;
+  return new Promise((resolvePromise) => {
+    const child = spawn(grokBin, ["-p", prompt, ...args], { env, cwd });
+    let stdout = "";
+    let stderr = "";
+    let timedOut = false;
+    const MAX = 50 * 1024 * 1024;
+    child.stdout?.on("data", (d) => {
+      if (stdout.length < MAX) stdout += d.toString();
+    });
+    child.stderr?.on("data", (d) => {
+      if (stderr.length < MAX) stderr += d.toString();
+    });
+    const timer =
+      timeoutMs && timeoutMs > 0
+        ? setTimeout(() => {
+            timedOut = true;
+            child.kill("SIGTERM");
+          }, timeoutMs)
+        : null;
+    child.on("close", (code) => {
+      if (timer) clearTimeout(timer);
+      resolvePromise({
+        stdout: stdout.trim(),
+        stderr: stderr.trim(),
+        status: code ?? 1,
+        ok: code === 0 && !timedOut,
+        timedOut,
+      });
+    });
+    child.on("error", (err) => {
+      if (timer) clearTimeout(timer);
+      resolvePromise({
+        stdout: stdout.trim(),
+        stderr: (stderr + "\n" + String(err)).trim(),
+        status: 1,
+        ok: false,
+        timedOut,
+      });
+    });
+  });
 }
 
 export function tmuxNewSession(

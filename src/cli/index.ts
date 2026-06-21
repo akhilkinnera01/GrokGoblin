@@ -47,7 +47,7 @@ const BOOLEAN_FLAGS = new Set([
   "check", "force", "verbose", "team", "mcp", "skip-git-repo-check",
   "always-approve", "history", "branch", "all", "merged", "help", "version",
   "merge-agents", "continue", "no-subagents", "no-digest", "no-verify", "once",
-  "goblins",
+  "goblins", "parallel",
 ]);
 
 function parseArgs(argv: string[]): {
@@ -207,7 +207,7 @@ function printHelp(): void {
   print("  gg quest <goal>            Durable multi-goal loop with checkpoints");
   print("  gg ralph <task>            Persistent single-task completion loop");
   print("  gg goblins [N] <task>      Verified multi-goblin loop: fan out to N goblins, gate until correct");
-  print(dim("    goblins flags: --once (single-shot) --tmux (panes)  · status|shutdown|resume <name>"));
+  print(dim("    goblins flags: --parallel (worktree-isolated fan-out) --once (single-shot) --tmux (panes)"));
   print(dim("  loop flags: --max-iterations <n> --max-turns <n> --verify \"<cmd>\" --no-verify --fast --model <id> --best-of <n> --skip-git-repo-check"));
   print("");
   print(bold("Worktrees (isolated workspaces):"));

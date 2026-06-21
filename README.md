@@ -260,11 +260,14 @@ Loop flags: `--verify "<cmd>"` (set the check explicitly; otherwise it's auto-de
 **Verified multi-goblin work**
 ```bash
 gg goblins 3 "audit this service and fix the security findings"   # fan out + gate until correct
+gg goblins --parallel 4 "add a unit-test file for each module"    # true OS-parallel, worktree-isolated
 gg goblins 2:warden "threat-model the payment flow"               # bias toward a role
 gg goblins --once 3 "summarize these docs"                        # legacy single-shot (no loop)
 gg goblins --tmux 4 "refactor across these modules"               # legacy visual multi-pane
 ```
 By default `gg goblins` fans the work out to specialist goblins and then runs the **same verification gate** as the loops above, repeating until the work is correct.
+
+With `--parallel`, the task is split into independent units (disjoint file scopes) that each run as their **own grok process in their own git worktree** — real parallelism, no cross-contamination. Completed branches merge back; a merge conflict is deferred to the verified loop rather than auto-resolved, and the run still only finishes once the verification gate passes. If the goal can't be split cleanly, it falls back to the sequential verified loop automatically.
 
 ---
 
