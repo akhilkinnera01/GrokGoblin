@@ -1,3 +1,8 @@
+---
+name: goblinplan
+description: "Architecture planning and implementation strategy synthesis. Use after scope is clear to turn it into a concrete plan and weigh tradeoffs before any code is written. Produces a plan, does not implement."
+---
+
 # /goblinplan
 
 Architecture planning and implementation strategy synthesis.

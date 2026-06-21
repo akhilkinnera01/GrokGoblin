@@ -27,7 +27,7 @@
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
-    "gg": "dist/index.js",
+    "goblin": "dist/index.js",
     "grokgoblin": "dist/index.js"
   },
   "engines": {

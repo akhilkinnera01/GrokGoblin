@@ -99,7 +99,7 @@ export async function runGoblinsParallel(
 ): Promise<void> {
   const grokBin = process.env["GROK_BIN"] ?? "grok";
   if (!commandExists(grokBin)) {
-    warn("grok CLI not found. Run `gg setup` first.");
+    warn("grok CLI not found. Run `goblin setup` first.");
     process.exit(1);
   }
   // Parallel fan-out needs git worktrees for isolation.

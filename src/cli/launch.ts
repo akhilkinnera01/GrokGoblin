@@ -134,7 +134,7 @@ async function prepareWorktree(
 
   const repoRoot = gitRepoRoot(cwd) ?? cwd;
   // Smart default: a memorable goblin name instead of a fixed "detached" branch,
-  // so every `gg -w` launch gets its own clean, named workspace.
+  // so every `goblin -w` launch gets its own clean, named workspace.
   const name =
     typeof worktree === "string" && worktree.trim()
       ? slugifyWorktreeName(worktree)
@@ -150,7 +150,7 @@ async function prepareWorktree(
   return res.path;
 }
 
-// Best-effort exclusive file lock (atomic O_EXCL create) so concurrent `gg`
+// Best-effort exclusive file lock (atomic O_EXCL create) so concurrent `goblin`
 // sessions don't interleave the read-modify-write of the shared AGENTS.md.
 function withAgentsLock(lockPath: string, fn: () => void): void {
   let fd: number | undefined;
@@ -229,7 +229,7 @@ export async function runLaunch(
   if (!commandExists(grokBin)) {
     warn(`grok not found. Install it first:`);
     print("  curl -fsSL https://x.ai/cli/install.sh | sh");
-    print("Then run: gg setup");
+    print("Then run: goblin setup");
     process.exit(1);
   }
 
@@ -375,7 +375,7 @@ export async function runExec(
     args.push("--always-approve");
   }
 
-  // Restrict the toolset (headless only) — used by `gg explore` for read-only runs.
+  // Restrict the toolset (headless only) — used by `goblin explore` for read-only runs.
   if (options.tools) {
     args.push("--tools", options.tools);
   }

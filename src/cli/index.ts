@@ -23,8 +23,8 @@ type CliCommand =
   | "hook"
   | "version"
   | "help"
+  | "swarm"
   | "goblins"
-  | "team"
   | "ralph"
   | "hunt"
   | "goal"
@@ -44,15 +44,15 @@ interface ResolvedCliInvocation {
 }
 
 // Flags that are always boolean — they must NEVER consume the following token as
-// their value, otherwise e.g. `gg exec --berserk "prompt"` would swallow the
+// their value, otherwise e.g. `goblin exec --berserk "prompt"` would swallow the
 // prompt. Anything not listed here may take a value (`--model grok-build`).
 const BOOLEAN_FLAGS = new Set([
   "berserk", "yolo", "high", "xhigh", "direct", "tmux", "fast", "plan", "ask",
-  "check", "force", "verbose", "team", "mcp", "skip-git-repo-check",
+  "check", "force", "verbose", "subagents", "mcp", "skip-git-repo-check",
   "always-approve", "history", "branch", "all", "merged", "help", "version",
   "merge-agents", "continue", "no-subagents", "no-digest", "no-verify", "once",
   "goblins", "parallel", "detach", "relentless",
-  "staged", "post", "pr", "push", "split",
+  "staged", "post", "pr", "push", "split", "deep",
 ]);
 
 function parseArgs(argv: string[]): {
@@ -136,8 +136,8 @@ function resolveCliInvocation(argv: string[]): ResolvedCliInvocation {
     "hook",
     "version",
     "help",
+    "swarm",
     "goblins",
-    "team",
     "ralph",
     "hunt",
     "goal",
@@ -160,89 +160,89 @@ function resolveCliInvocation(argv: string[]): ResolvedCliInvocation {
 }
 
 function printHelp(): void {
-  header(`GrokGoblin (gg) v${GG_VERSION}`);
+  header(`GrokGoblin (goblin) v${GG_VERSION}`);
   print(dim("A multi-agent orchestration layer for the xAI Grok CLI"));
   print(dim("Native multi-agent orchestration for grok — built by akhilkinnera01"));
   print("");
   print(bold("Usage:"));
-  print("  gg [command] [options]");
+  print("  goblin [command] [options]");
   print("");
   print(bold("Launch (default):"));
-  print("  gg                         Launch grok with GrokGoblin enhancement");
-  print("  gg -w                      Launch in a fresh isolated worktree (auto-named)");
-  print("  gg -w feat/task            Launch in a named worktree");
-  print("  gg --berserk               Launch with always-approve mode (no prompts)");
-  print("  gg --high                  High reasoning effort (headless only)");
-  print("  gg --fast                  Launch with grok-composer-2.5-fast model");
-  print("  gg --plan                  Launch in plan mode (headless only)");
-  print("  gg --direct                Launch without tmux management");
-  print("  gg --tmux                  Launch in detached tmux session");
+  print("  goblin                         Launch grok with GrokGoblin enhancement");
+  print("  goblin -w                      Launch in a fresh isolated worktree (auto-named)");
+  print("  goblin -w feat/task            Launch in a named worktree");
+  print("  goblin --berserk               Launch with always-approve mode (no prompts)");
+  print("  goblin --high                  High reasoning effort (headless only)");
+  print("  goblin --fast                  Launch with grok-composer-2.5-fast model");
+  print("  goblin --plan                  Launch in plan mode (headless only)");
+  print("  goblin --direct                Launch without tmux management");
+  print("  goblin --tmux                  Launch in detached tmux session");
   print("");
   print(bold("Setup & Maintenance:"));
-  print("  gg setup                   Install GrokGoblin skills, hooks, AGENTS.md");
-  print("  gg setup --scope project   Install to .grok/ (project scope)");
-  print("  gg setup --force           Force overwrite existing files");
-  print("  gg update                  Update GrokGoblin and refresh setup");
-  print("  gg uninstall               Remove GrokGoblin hooks and config");
-  print("  gg doctor                  Check installation health");
-  print("  gg doctor --verbose        Show fix commands for each issue");
-  print("  gg doctor --goblins        Also check goblins --tmux mode requirements");
+  print("  goblin setup                   Install GrokGoblin skills, hooks, AGENTS.md");
+  print("  goblin setup --scope project   Install to .grok/ (project scope)");
+  print("  goblin setup --force           Force overwrite existing files");
+  print("  goblin update                  Update GrokGoblin and refresh setup");
+  print("  goblin uninstall               Remove GrokGoblin hooks and config");
+  print("  goblin doctor                  Check installation health");
+  print("  goblin doctor --verbose        Show fix commands for each issue");
+  print("  goblin doctor --goblins        Also check swarm --tmux mode requirements");
   print("");
   print(bold("Skills:"));
-  print("  gg skills list             List installed skills");
-  print("  gg skills info <name>      Show skill documentation");
-  print("  gg skills refresh          Re-install all skills");
+  print("  goblin skills list             List installed skills");
+  print("  goblin skills info <name>      Show skill documentation");
+  print("  goblin skills refresh          Re-install all skills");
   print("");
   print(bold("Execution:"));
-  print("  gg ask <question>          Quick one-shot question (no repo needed)");
-  print("  gg explore <topic>         Read-only investigation (no edits)");
-  print("  gg forage <topic>          Multi-facet read-only research (parallel goblins + live web/X)");
-  print("  gg exec <prompt>           Run a headless grok task");
-  print("  gg exec --check            Test grok authentication");
-  print("  gg exec --effort high <p>  Headless task with high reasoning effort");
+  print("  goblin ask <question>          Quick one-shot question (no repo needed)");
+  print("  goblin explore <topic>         Read-only investigation (no edits)");
+  print("  goblin forage <topic>          Deep research: plan → parallel web/X search → synthesize (--deep --facets N)");
+  print("  goblin exec <prompt>           Run a headless grok task");
+  print("  goblin exec --check            Test grok authentication");
+  print("  goblin exec --effort high <p>  Headless task with high reasoning effort");
   print("");
   print(bold("Config (grok config.toml):"));
-  print("  gg config                  Show GrokGoblin-managed grok settings");
-  print("  gg config get <key>        Read a config value (e.g. models.default)");
-  print("  gg config set <key> <val>  Write a config value");
-  print("  gg config model fast       Set default model to grok-composer-2.5-fast");
+  print("  goblin config                  Show GrokGoblin-managed grok settings");
+  print("  goblin config get <key>        Read a config value (e.g. models.default)");
+  print("  goblin config set <key> <val>  Write a config value");
+  print("  goblin config model fast       Set default model to grok-composer-2.5-fast");
   print("");
   print(bold("Memory & discovery:"));
-  print("  gg memory [status|search|on|off|edit]     Persistent cross-session project memory");
-  print("  gg list [skills|agents|cruise|sessions]   List installed/tracked items");
+  print("  goblin memory [status|search|on|off|edit]     Persistent cross-session project memory");
+  print("  goblin list [skills|agents|cruise|sessions]   List installed/tracked items");
   print("");
   print(bold("Workflows (autonomous loops with a verification gate):"));
-  print("  gg cruise <goal>           Full pipeline loop: dig→goblinplan→quest→tdd→code-review");
-  print("  gg quest <goal>            Durable multi-goal loop with checkpoints");
-  print("  gg ralph <task>            Persistent single-task completion loop");
-  print("  gg hunt \"<objective>\"       Autonomous goal: triage → pursue until verified (--detach to run for hours)");
-  print(dim("    hunt lifecycle: gg hunt (status) · gg hunt pause|resume|clear [id]"));
-  print("  gg review [PR#|range]      Independent 2-lane code review (nitpicker + warden), severity-rated · --staged --post");
-  print("  gg ship [message]          Verify → style-matched commit on a safe branch · --pr (push + open PR) --no-verify");
-  print("  gg goblins [N] <task>      Verified multi-goblin loop: fan out to N goblins, gate until correct");
-  print(dim("    goblins flags: --parallel (worktree-isolated fan-out) --once (single-shot) --tmux (panes)"));
+  print("  goblin cruise <goal>           Full pipeline loop: dig→goblinplan→quest→tdd→code-review");
+  print("  goblin quest <goal>            Durable multi-goal loop with checkpoints");
+  print("  goblin ralph <task>            Persistent single-task completion loop");
+  print("  goblin hunt \"<objective>\"       Autonomous goal: triage → pursue until verified (--detach to run for hours)");
+  print(dim("    hunt lifecycle: goblin hunt (status) · goblin hunt pause|resume|clear [id]"));
+  print("  goblin review [PR#|range]      Independent 2-lane code review (nitpicker + warden), severity-rated · --staged --post");
+  print("  goblin ship [message]          Verify → style-matched commit on a safe branch · --pr (push + open PR) --no-verify");
+  print("  goblin swarm [N] <task>      Verified multi-goblin loop: fan out to N goblins, gate until correct");
+  print(dim("    swarm flags: --parallel (worktree-isolated fan-out) --once (single-shot) --tmux (panes)"));
   print(dim("  loop flags: --max-iterations <n> --max-turns <n> --verify \"<cmd>\" --no-verify --fast --model <id> --best-of <n> --skip-git-repo-check"));
   print("");
   print(bold("Worktrees (isolated workspaces):"));
-  print("  gg worktree                List worktrees (status, age, branch)");
-  print("  gg worktree new [name]     Create one (smart goblin name if omitted)");
-  print("  gg worktree rm <name>      Remove one (--force, --branch)");
-  print("  gg worktree clean          Remove merged, clean worktrees");
+  print("  goblin worktree                List worktrees (status, age, branch)");
+  print("  goblin worktree new [name]     Create one (smart goblin name if omitted)");
+  print("  goblin worktree rm <name>      Remove one (--force, --branch)");
+  print("  goblin worktree clean          Remove merged, clean worktrees");
   print("");
   print(bold("Hooks:"));
-  print("  gg hooks list              List registered hooks");
-  print("  gg hook <event>            Dispatch a hook event (used by hooks.json)");
+  print("  goblin hooks list              List registered hooks");
+  print("  goblin hook <event>            Dispatch a hook event (used by hooks.json)");
   print("");
   print(bold("Agents:"));
-  print("  gg agents list             List available agent roles");
+  print("  goblin agents list             List available agent roles");
   print("");
   print(bold("State:"));
-  print("  gg state list              Show active workflow modes");
-  print("  gg state clear             Clear all mode state");
+  print("  goblin state list              Show active workflow modes");
+  print("  goblin state clear             Clear all mode state");
   print("");
   print(bold("Info:"));
-  print("  gg version                 Print version");
-  print("  gg help                    Print this help");
+  print("  goblin version                 Print version");
+  print("  goblin help                    Print this help");
   print("");
   print(bold("In-session skills (invoke inside grok with /<name>):"));
   print("  /dig                        Structured requirements clarification");
@@ -252,7 +252,10 @@ function printHelp(): void {
   print("  /cruise                     Full pipeline: dig→goblinplan→quest→tdd→code-review");
   print("  /code-review                Code/PR review");
   print("  /tdd                        Test-driven development");
-  print("  /goblins                    Parallel execution");
+  print("  /swarm                      Parallel execution across multiple goblins");
+  print("  /hunt                       Autonomous goal: triage → pursue until verified");
+  print("  /review                     Independent 2-lane review (nitpicker + warden)");
+  print("  /ship                       Verify-gated, style-matched commit on a safe branch");
   print("");
   print(bold("Environment variables:"));
   print("  XAI_API_KEY                 xAI API key (optional; or use `grok login`)");
@@ -353,7 +356,7 @@ export async function main(argv: string[]): Promise<void> {
         scope: flags["scope"] as "user" | "project" | undefined,
         force: Boolean(flags["force"]),
         mergeAgents: Boolean(flags["merge-agents"]),
-        team: flags["team"] !== false,
+        subagents: flags["subagents"] !== false,
         mcp: Boolean(flags["mcp"]),
       };
       await runSetup(cwd, setupOptions);
@@ -385,7 +388,7 @@ export async function main(argv: string[]): Promise<void> {
       const { runDoctor } = await import("./doctor.js");
       await runDoctor(cwd, {
         verbose: Boolean(flags["verbose"]),
-        team: Boolean(flags["goblins"] || flags["team"]),
+        swarm: Boolean(flags["goblins"]),
       });
       break;
     }
@@ -406,7 +409,7 @@ export async function main(argv: string[]): Promise<void> {
       // Quick one-shot question: headless, plain output, no git repo required.
       const { runExec } = await import("./launch.js");
       const question = args.join(" ").trim();
-      if (!question) exitWithError("gg ask requires a question, e.g. `gg ask \"how do I ...\"`");
+      if (!question) exitWithError("goblin ask requires a question, e.g. `goblin ask \"how do I ...\"`");
       await runExec(cwd, question, {
         model: Boolean(flags["fast"]) ? DEFAULT_FAST_MODEL : undefined,
         outputFormat: "plain",
@@ -419,7 +422,7 @@ export async function main(argv: string[]): Promise<void> {
       // Read-only investigation: headless, restricted to read/search tools, no edits.
       const { runExec } = await import("./launch.js");
       const topic = args.join(" ").trim();
-      if (!topic) exitWithError('gg explore requires a topic, e.g. `gg explore "how does auth work"`');
+      if (!topic) exitWithError('goblin explore requires a topic, e.g. `goblin explore "how does auth work"`');
       await runExec(cwd, `Investigate and explain (read-only, do NOT modify files): ${topic}`, {
         model: Boolean(flags["fast"]) ? DEFAULT_FAST_MODEL : undefined,
         outputFormat: "plain",
@@ -442,6 +445,7 @@ export async function main(argv: string[]): Promise<void> {
       const facetsRaw = flags["facets"] as string | undefined;
       await runForage(cwd, args.join(" ").trim(), {
         facets: facetsRaw ? Number(facetsRaw) : undefined,
+        depth: flags["deep"] ? "deep" : "quick",
         model: flags["model"] as string | undefined,
         out: flags["out"] as string | undefined,
       });
@@ -471,7 +475,7 @@ export async function main(argv: string[]): Promise<void> {
       // Durable multi-goal decomposition — runs as an autonomous, checkpointed
       // loop (not a single headless turn) so it actually drives to completion.
       const goal = args.join(" ").trim();
-      if (!goal) exitWithError("gg quest requires a goal description");
+      if (!goal) exitWithError("goblin quest requires a goal description");
       const { runQuest } = await import("./cruise.js");
       const maxRaw = flags["max-iterations"] as string | undefined;
       await runQuest(cwd, goal, {
@@ -496,7 +500,7 @@ export async function main(argv: string[]): Promise<void> {
         ? "Reply with exactly: GrokGoblin-EXEC-OK"
         : prompt;
       if (!actualPrompt) {
-        exitWithError("gg exec requires a prompt argument or --check");
+        exitWithError("goblin exec requires a prompt argument or --check");
       }
       const fastExec = Boolean(flags["fast"]);
       await runExec(cwd, actualPrompt, {
@@ -538,7 +542,7 @@ export async function main(argv: string[]): Promise<void> {
 
     case "hook": {
       const event = args[0] ?? flags["event"] as string;
-      if (!event) exitWithError("gg hook requires an event name");
+      if (!event) exitWithError("goblin hook requires an event name");
       const { runHookDispatch } = await import("./hooks.js");
       await runHookDispatch(cwd, event);
       break;
@@ -577,9 +581,9 @@ export async function main(argv: string[]): Promise<void> {
       break;
     }
 
-    case "goblins":
-    case "team": {
-      // `team` is a hidden back-compat alias; the feature is Goblins.
+    case "swarm":
+    case "goblins": {
+      // `swarm` is the command; `goblins` is a hidden back-compat alias.
       const { runGoblins } = await import("./goblins.js");
       await runGoblins(cwd, args, flags);
       break;
@@ -613,7 +617,7 @@ export async function main(argv: string[]): Promise<void> {
     }
 
     case "hud": {
-      warn("HUD is available in tmux sessions. Launch with `gg --tmux`.");
+      warn("HUD is available in tmux sessions. Launch with `goblin --tmux`.");
       break;
     }
 
@@ -627,7 +631,7 @@ export async function main(argv: string[]): Promise<void> {
       // Persistent single-task completion — autonomous loop with a verification
       // gate, rather than one headless turn that would exit after setup.
       const task = args.join(" ").trim();
-      if (!task) exitWithError("gg ralph requires a task description");
+      if (!task) exitWithError("goblin ralph requires a task description");
       const { runRalph } = await import("./cruise.js");
       const maxRaw = flags["max-iterations"] as string | undefined;
       await runRalph(cwd, task, {

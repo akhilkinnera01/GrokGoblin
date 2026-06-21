@@ -9,7 +9,7 @@ import { resolveVerifyCommand, runCheck } from "../utils/verify.js";
 import { resolveGrokHome, DEFAULT_FAST_MODEL } from "../utils/paths.js";
 import { print, header, ok, warn, info, step, dim, bold, exitWithError } from "../utils/print.js";
 
-// `gg ship` — turn verified working changes into clean commits and (opt-in) a PR.
+// `goblin ship` — turn verified working changes into clean commits and (opt-in) a PR.
 // Top-tier principles (2026): never ship red work (run the verification gate
 // first and carry the evidence), match the repo's commit style, split into atomic
 // commits by concern, stay safe (branch off the default branch, never --force,
@@ -145,7 +145,7 @@ export async function runShip(
   flags: Record<string, string | boolean | number>
 ): Promise<void> {
   const grokBin = process.env["GROK_BIN"] ?? "grok";
-  if (!isGitRepo(cwd)) exitWithError("gg ship needs a git repository.");
+  if (!isGitRepo(cwd)) exitWithError("goblin ship needs a git repository.");
   const repoRoot = gitRepoRoot(cwd) ?? cwd;
   const grokHome = resolveGrokHome();
 
@@ -179,7 +179,7 @@ export async function runShip(
       ok(`Check passed: ${verifyCmd}`);
       evidence = `\`${verifyCmd}\` passed`;
     } else {
-      info("No deterministic check found — shipping without one (consider `gg review`).");
+      info("No deterministic check found — shipping without one (consider `goblin review`).");
       evidence = "no automated check available";
     }
   }
@@ -257,7 +257,7 @@ export async function runShip(
       "",
       "---",
       `**Verification:** ${evidence}`,
-      "**Shipped with:** GrokGoblin (`gg ship`)",
+      "**Shipped with:** GrokGoblin (`goblin ship`)",
     ].join("\n");
     step("Opening pull request...");
     const pr = runSync("gh", ["pr", "create", "--base", base, "--head", workBranch, "--title", message.split("\n")[0], "--body", prBody], { cwd: repoRoot });

@@ -1,6 +1,11 @@
-# /goblins
+---
+name: swarm
+description: "Swarm a task across multiple parallel grok goblins. Use when the work has clearly independent tracks — each goblin owns a bounded slice and reports evidence back to the leader."
+---
 
-Coordinated parallel execution across multiple Grok sessions.
+# /swarm
+
+Swarm a task across multiple parallel grok goblins.
 
 ## Purpose
 
@@ -72,7 +77,7 @@ Each worker should:
 `.grokgoblin/state/goblins/<goblins-name>/state.json`:
 ```json
 {
-  "teamName": "gg-goblins-abc123",
+  "swarmName": "gg-goblins-abc123",
   "task": "...",
   "workerCount": 3,
   "workers": [

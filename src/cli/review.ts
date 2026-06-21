@@ -11,7 +11,7 @@ import { resolveGrokHome, DEFAULT_FRONTIER_MODEL } from "../utils/paths.js";
 import { leaderSocketArgs } from "../utils/leader.js";
 import { print, header, ok, warn, info, step, dim, bold, exitWithError } from "../utils/print.js";
 
-// `gg review` — independent, severity-rated code review for grok.
+// `goblin review` — independent, severity-rated code review for grok.
 // Two INDEPENDENT review lanes run in parallel as separate grok processes (never
 // self-review; native spawn_subagent is unreliable headless), high-signal severity
 // rating (CRITICAL/HIGH/MEDIUM/LOW), file:line findings, repo AGENTS.md review
@@ -157,8 +157,8 @@ export async function runReview(
   flags: Record<string, string | boolean | number>
 ): Promise<void> {
   const grokBin = process.env["GROK_BIN"] ?? "grok";
-  if (!commandExists(grokBin)) exitWithError("grok not found on PATH. Run `gg setup` first.");
-  if (!isGitRepo(cwd)) exitWithError("gg review needs a git repository.");
+  if (!commandExists(grokBin)) exitWithError("grok not found on PATH. Run `goblin setup` first.");
+  if (!isGitRepo(cwd)) exitWithError("goblin review needs a git repository.");
   const repoRoot = gitRepoRoot(cwd) ?? cwd;
   const grokHome = resolveGrokHome();
   const leaderArgs = leaderSocketArgs(grokHome, repoRoot);

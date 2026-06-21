@@ -12,19 +12,19 @@ const TRANSITION_RULES: TransitionRule[] = [
     to: ["goblinplan", "research"],
     requires: "scope-confirmed",
   },
-  { from: "goblinplan", to: ["cruise", "ralph", "quest", "team"] },
-  { from: "quest", to: ["ralph", "team"] },
-  { from: "ralph", to: ["quest", "team"] },
+  { from: "goblinplan", to: ["cruise", "ralph", "quest", "swarm"] },
+  { from: "quest", to: ["ralph", "swarm"] },
+  { from: "ralph", to: ["quest", "swarm"] },
   { from: "research", to: ["goblinplan", "ralph"] },
   { from: "cruise", to: ["ralph", "quest"] },
-  { from: "team", to: ["quest", "ralph"] },
+  { from: "swarm", to: ["quest", "ralph"] },
 ];
 
 const EXCLUSIVE_PAIRS: Array<[GgMode, GgMode]> = [
   ["ralph", "cruise"],
   ["goblinplan", "cruise"],
   ["dig", "quest"],
-  ["dig", "team"],
+  ["dig", "swarm"],
 ];
 
 export function canTransitionTo(

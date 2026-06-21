@@ -20,7 +20,7 @@ export function discoverHookPlugins(
   // SECURITY: only execute hook plugins from the user's TRUSTED global grok home.
   // We deliberately do NOT scan the project-local `./.grok/hooks` directory —
   // executing `.js` files found there would let any cloned/opened repository run
-  // arbitrary code with the user's privileges the moment they run `gg` in it
+  // arbitrary code with the user's privileges the moment they run `goblin` in it
   // (a classic supply-chain / RCE vector). `cwd` is kept only for context.
   void cwd;
   const dirs = [
@@ -137,7 +137,7 @@ export function mergeGrokHooksJson(
       !result[event] ||
       result[event].startsWith(markerPrefix) ||
       result[event].includes("grokgoblin") ||
-      result[event].includes("gg hook")
+      result[event].includes("goblin hook")
     ) {
       result[event] = cmd;
     }

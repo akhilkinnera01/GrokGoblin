@@ -52,12 +52,12 @@ function warn_check(
 
 export async function runDoctor(
   cwd: string,
-  options: { verbose?: boolean; team?: boolean } = {}
+  options: { verbose?: boolean; swarm?: boolean } = {}
 ): Promise<void> {
   const grokHome = resolveGrokHome();
   const results: DoctorCheckResult[] = [];
 
-  header("gg doctor");
+  header("goblin doctor");
   print(dim(`grok home: ${grokHome}`));
   print(dim(`working dir: ${cwd}`));
   print("");
@@ -91,8 +91,8 @@ export async function runDoctor(
       "~/.grok directory",
       existsSync(grokHome),
       `${grokHome} exists`,
-      `Run \`gg setup\` to create it`,
-      "gg setup"
+      `Run \`goblin setup\` to create it`,
+      "goblin setup"
     )
   );
 
@@ -103,8 +103,8 @@ export async function runDoctor(
       "AGENTS.md",
       hasAgentsMd,
       `AGENTS.md present at ${agentsMdPath}`,
-      `Missing AGENTS.md — run \`gg setup\``,
-      "gg setup"
+      `Missing AGENTS.md — run \`goblin setup\``,
+      "goblin setup"
     )
   );
 
@@ -116,8 +116,8 @@ export async function runDoctor(
         "AGENTS.md GrokGoblin content",
         content.includes("grokgoblin") || content.includes("GrokGoblin"),
         "AGENTS.md has GrokGoblin orchestration brain",
-        "AGENTS.md exists but missing GrokGoblin content — run `gg setup --force`",
-        "gg setup --force"
+        "AGENTS.md exists but missing GrokGoblin content — run `goblin setup --force`",
+        "goblin setup --force"
       )
     );
   }
@@ -128,8 +128,8 @@ export async function runDoctor(
       "skills directory",
       existsSync(skillsDir),
       `Skills directory present at ${skillsDir}`,
-      "Skills directory missing — run `gg setup`",
-      "gg setup"
+      "Skills directory missing — run `goblin setup`",
+      "goblin setup"
     )
   );
 
@@ -143,8 +143,8 @@ export async function runDoctor(
         "installed skills",
         installed.length > 0,
         `${installed.length} skill(s) installed: ${installed.join(", ")}`,
-        "No skills installed — run `gg setup`",
-        "gg setup"
+        "No skills installed — run `goblin setup`",
+        "goblin setup"
       )
     );
   }
@@ -156,8 +156,8 @@ export async function runDoctor(
       "hooks.json",
       existsSync(hooksJsonPath),
       "hooks/hooks.json present",
-      "hooks/hooks.json missing — run `gg setup`",
-      "gg setup"
+      "hooks/hooks.json missing — run `goblin setup`",
+      "goblin setup"
     )
   );
 
@@ -168,8 +168,8 @@ export async function runDoctor(
       "subagent roles",
       roleCount > 0,
       `${roleCount} grok subagent roles registered`,
-      "no subagent roles in config.toml — run `gg setup`",
-      "gg setup"
+      "no subagent roles in config.toml — run `goblin setup`",
+      "goblin setup"
     )
   );
 
@@ -177,7 +177,7 @@ export async function runDoctor(
     const { readFileOrEmpty } = await import("../utils/toml.js");
     const content = readFileOrEmpty(hooksJsonPath);
     // Real check: hooks must be in grok's schema (a "hooks" object with command
-    // entries calling `gg hook`), not just any file mentioning gg.
+    // entries calling `goblin hook`), not just any file mentioning gg.
     let registered = false;
     try {
       const parsed = JSON.parse(content);
@@ -192,8 +192,8 @@ export async function runDoctor(
         "GrokGoblin hooks registered",
         registered,
         "GrokGoblin hooks registered in grok hook schema",
-        "hooks file exists but GrokGoblin hooks not in grok schema — run `gg setup`",
-        "gg setup"
+        "hooks file exists but GrokGoblin hooks not in grok schema — run `goblin setup`",
+        "goblin setup"
       )
     );
   }
@@ -204,8 +204,8 @@ export async function runDoctor(
       "config.toml",
       existsSync(configPath),
       "config.toml present",
-      "config.toml missing — run `gg setup` to create defaults",
-      "gg setup"
+      "config.toml missing — run `goblin setup` to create defaults",
+      "goblin setup"
     )
   );
 
@@ -217,8 +217,8 @@ export async function runDoctor(
         "default model",
         typeof defaultModel === "string" && defaultModel.length > 0,
         `[models].default = ${defaultModel}`,
-        "[models].default not set — run `gg setup`",
-        "gg setup"
+        "[models].default not set — run `goblin setup`",
+        "goblin setup"
       )
     );
     // Flag leftover dead keys from older GrokGoblin versions.
@@ -232,7 +232,7 @@ export async function runDoctor(
           "legacy config keys",
           false,
           "",
-          "config.toml has dead GrokGoblin keys — run `gg setup` to clean them"
+          "config.toml has dead GrokGoblin keys — run `goblin setup` to clean them"
         )
       );
     }
@@ -243,18 +243,18 @@ export async function runDoctor(
       ".grokgoblin/ state directory",
       existsSync(join(cwd, ".grokgoblin")),
       ".grokgoblin/ state directory present",
-      ".grokgoblin/ state directory missing — run `gg setup`",
-      "gg setup"
+      ".grokgoblin/ state directory missing — run `goblin setup`",
+      "goblin setup"
     )
   );
 
-  if (options.team) {
+  if (options.swarm) {
     results.push(
       warn_check(
-        "tmux (for goblins --tmux mode)",
+        "tmux (for swarm --tmux mode)",
         commandExists("tmux"),
-        "tmux found — goblins --tmux mode available",
-        "tmux not found — install it for goblins --tmux mode",
+        "tmux found — swarm --tmux mode available",
+        "tmux not found — install it for swarm --tmux mode",
         "brew install tmux"
       )
     );
@@ -295,13 +295,13 @@ export async function runDoctor(
   print("");
 
   if (hasFailures) {
-    fail("Doctor found critical issues. Run `gg setup` to fix.");
+    fail("Doctor found critical issues. Run `goblin setup` to fix.");
     process.exit(1);
   } else if (hasWarnings) {
-    warn("Doctor found warnings. Run `gg setup` to resolve.");
+    warn("Doctor found warnings. Run `goblin setup` to resolve.");
   } else {
     ok("All checks passed. grokgoblin is healthy.");
     print("");
-    print(dim("Run `gg exec --check` to verify grok can authenticate."));
+    print(dim("Run `goblin exec --check` to verify grok can authenticate."));
   }
 }

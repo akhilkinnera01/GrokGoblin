@@ -55,12 +55,12 @@ export async function runSetup(
   const scope: SetupScope = options.scope ?? "user";
   const force = options.force ?? false;
   const mergeAgents = options.mergeAgents ?? false;
-  const teamEnabled = options.team ?? true;
+  const subagentsEnabled = options.subagents ?? true;
   const mcpEnabled = options.mcp ?? false;
 
   const grokHome = resolveGrokHomeForScope(cwd, scope);
   // Hooks are machine-invoked by grok; use the unambiguous `grokgoblin` bin so a
-  // shell alias on `gg` can never shadow them.
+  // shell alias on `goblin` can never shadow them.
   const ggBin = process.env["GG_ENTRY_PATH"] ?? "grokgoblin";
 
   header(`grokgoblin setup (v${GG_VERSION})`);
@@ -71,7 +71,7 @@ export async function runSetup(
     warn("grok CLI not found on PATH. Install it first:");
     print("  curl -fsSL https://x.ai/cli/install.sh | sh");
     print("");
-    warn("Continuing setup — run `gg doctor` after installing grok.");
+    warn("Continuing setup — run `goblin doctor` after installing grok.");
     print("");
   }
 
@@ -147,9 +147,9 @@ export async function runSetup(
   ok(`Setup complete! grokgoblin v${GG_VERSION} is ready.`);
   print("");
   print("Next steps:");
-  print(`  1. Run ${dim("gg doctor")} to verify the installation`);
-  print(`  2. Run ${dim("gg exec --check \"Reply with exactly GrokGoblin-OK\"")} to test grok connectivity`);
-  print(`  3. Launch with ${dim("gg")} from your project directory`);
+  print(`  1. Run ${dim("goblin doctor")} to verify the installation`);
+  print(`  2. Run ${dim("goblin exec --check \"Reply with exactly GrokGoblin-OK\"")} to test grok connectivity`);
+  print(`  3. Launch with ${dim("goblin")} from your project directory`);
   print("");
   print("In a Grok session, start with:");
   print(`  ${dim("/dig")} — clarify scope`);
@@ -183,6 +183,6 @@ export async function runUninstall(cwd: string): Promise<void> {
   ok("Subagent roles removed");
 
   print("");
-  ok("grokgoblin uninstalled. Run `gg setup` to reinstall.");
+  ok("grokgoblin uninstalled. Run `goblin setup` to reinstall.");
   print(dim("Skills and AGENTS.md were kept — remove manually if needed."));
 }

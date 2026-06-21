@@ -63,7 +63,7 @@ export function ensureGrokConfigDefaults(grokHome: string): void {
   }
 }
 
-// --- Generic dotted-key access for the `gg config` command ---
+// --- Generic dotted-key access for the `goblin config` command ---
 
 function coerceTomlValue(raw: string): unknown {
   if (raw === "true") return true;
@@ -144,7 +144,7 @@ export interface GrokHooksFile {
 }
 
 // A hook group is "ours" if any of its commands invoke the GrokGoblin bin
-// (either `grokgoblin hook ...` or the short `gg hook ...`). Quote-tolerant, since
+// (either `grokgoblin hook ...` or the short `goblin hook ...`). Quote-tolerant, since
 // the binary path is shell-quoted in the command (e.g. `'grokgoblin' hook ...`).
 const GG_HOOK_CMD_RE = /(grokgoblin|gg)['"]?\s+hook\b/;
 function isGgCommand(command: string): boolean {

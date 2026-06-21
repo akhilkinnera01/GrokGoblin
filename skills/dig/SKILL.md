@@ -1,3 +1,8 @@
+---
+name: dig
+description: "Structured requirements clarification before implementing anything complex. Use when requirements are ambiguous, non-goals need defining, or you must pick between approaches before writing code."
+---
+
 # /dig
 
 Structured requirements clarification before implementing anything complex.

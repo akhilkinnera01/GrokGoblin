@@ -76,7 +76,11 @@ This sequence is the GrokGoblin way. Don't skip clarification when the task is a
 | \`/cruise\` | Full pipeline: dig→goblinplan→quest→tdd→code-review |
 | \`/code-review\` | Comprehensive code/PR review |
 | \`/tdd\` | Test-driven development flow |
-| \`/goblins\` | Coordinated parallel execution |
+| \`/swarm\` | Coordinated parallel execution across multiple goblins |
+| \`/hunt\` | Set a goal and pursue it autonomously to verified completion |
+| \`/review\` | Independent 2-lane review (nitpicker + warden), severity-rated |
+| \`/ship\` | Verify-gated, style-matched commit on a safe branch |
+| \`/forage\` | Deep research: parallel web/X search → reflect → verify → cited report |
 
 ---
 

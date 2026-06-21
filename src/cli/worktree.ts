@@ -21,7 +21,7 @@ export function printIsolationBanner(wt: { path: string; branch: string; name: s
   print(`   ${dim("branch")}     ${wt.branch}`);
   print("");
   print(dim("   Changes here stay on this branch — your main checkout is untouched."));
-  print(dim(`   When you're done:  gg worktree rm ${wt.name} --branch`));
+  print(dim(`   When you're done:  goblin worktree rm ${wt.name} --branch`));
   print("");
 }
 
@@ -48,8 +48,8 @@ function runList(cwd: string): void {
   if (all.length === 0) {
     print(dim("No worktrees yet."));
     print("");
-    print(`Create one:  ${bold("gg worktree new")}  ${dim("(smart name)")}`);
-    print(`         or:  ${bold("gg worktree new feature-x")}`);
+    print(`Create one:  ${bold("goblin worktree new")}  ${dim("(smart name)")}`);
+    print(`         or:  ${bold("goblin worktree new feature-x")}`);
     return;
   }
 
@@ -60,7 +60,7 @@ function runList(cwd: string): void {
   }
   print("");
   print(dim(`Stored under: ${worktreesRoot(repoRoot)}`));
-  print(dim("Enter one:  cd \"$(gg worktree path <name>)\"   ·   Clean merged:  gg worktree clean"));
+  print(dim("Enter one:  cd \"$(goblin worktree path <name>)\"   ·   Clean merged:  goblin worktree clean"));
 }
 
 function runNew(cwd: string, args: string[]): void {
@@ -81,7 +81,7 @@ function runNew(cwd: string, args: string[]): void {
 function runRemove(cwd: string, args: string[], flags: Record<string, unknown>): void {
   const repoRoot = requireRepo(cwd);
   const name = args[0];
-  if (!name) exitWithError("Usage: gg worktree rm <name> [--force] [--branch]");
+  if (!name) exitWithError("Usage: goblin worktree rm <name> [--force] [--branch]");
 
   const res = removeWorktree(repoRoot, name, {
     force: Boolean(flags["force"]),
@@ -133,22 +133,22 @@ function runClean(cwd: string, flags: Record<string, unknown>): void {
 function runPath(cwd: string, args: string[]): void {
   const repoRoot = requireRepo(cwd);
   const name = args[0];
-  if (!name) exitWithError("Usage: gg worktree path <name>");
+  if (!name) exitWithError("Usage: goblin worktree path <name>");
   const wt = listWorktrees(repoRoot).find((w) => w.name === name || w.branch === name);
   if (!wt) exitWithError(`No worktree named "${name}".`);
-  // Bare path on stdout so it composes with `cd "$(gg worktree path x)"`.
+  // Bare path on stdout so it composes with `cd "$(goblin worktree path x)"`.
   process.stdout.write(wt.path + "\n");
 }
 
 function printWorktreeHelp(): void {
-  header("gg worktree — isolated workspaces");
+  header("goblin worktree — isolated workspaces");
   print("");
   print(bold("Usage:"));
-  print("  gg worktree                 List worktrees (status, age, branch)");
-  print("  gg worktree new [name]      Create a worktree (smart goblin name if omitted)");
-  print("  gg worktree rm <name>       Remove a worktree (--force dirty, --branch delete branch)");
-  print("  gg worktree clean           Remove merged, clean worktrees (--all, --force)");
-  print("  gg worktree path <name>     Print a worktree's path (for cd)");
+  print("  goblin worktree                 List worktrees (status, age, branch)");
+  print("  goblin worktree new [name]      Create a worktree (smart goblin name if omitted)");
+  print("  goblin worktree rm <name>       Remove a worktree (--force dirty, --branch delete branch)");
+  print("  goblin worktree clean           Remove merged, clean worktrees (--all, --force)");
+  print("  goblin worktree path <name>     Print a worktree's path (for cd)");
   print("");
   print(dim("Worktrees live in a sibling <repo>.gg-worktrees/ dir; branches are prefixed gg/."));
 }
@@ -189,7 +189,7 @@ export async function runWorktree(
       printWorktreeHelp();
       break;
     default:
-      // `gg worktree list` is the implicit default, but if the first token isn't a
+      // `goblin worktree list` is the implicit default, but if the first token isn't a
       // known subcommand, treat the whole thing as a name for `new`.
       runNew(cwd, args);
   }

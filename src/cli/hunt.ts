@@ -25,7 +25,7 @@ import { runChecker } from "./checker.js";
 import { leaderSocketArgs } from "../utils/leader.js";
 import { print, header, ok, warn, info, step, dim, bold, exitWithError } from "../utils/print.js";
 
-// `gg hunt` — autonomous outcome pursuit.
+// `goblin hunt` — autonomous outcome pursuit.
 // One entry point: triage the objective → right-size the strategy → persist a
 // completion CONTRACT → pursue it through the verified loop until the evidence
 // says done or the budget is spent. Lifecycle: status / pause / resume / clear,
@@ -157,7 +157,7 @@ async function pursue(cwd: string, c: GoalContract): Promise<void> {
   const grokHome = resolveGrokHome();
   const grokBin = process.env["GROK_BIN"] ?? "grok";
 
-  // Control hook: re-read the contract each iteration so `gg hunt pause/clear`
+  // Control hook: re-read the contract each iteration so `goblin hunt pause/clear`
   // (even from another terminal, even on a detached run) takes effect at the
   // next safe boundary.
   const controlCheck = (): "continue" | "pause" | "stop" => {
@@ -252,7 +252,7 @@ async function pursue(cwd: string, c: GoalContract): Promise<void> {
   } else {
     latest.status = "blocked";
     latest.history.push({ ts: new Date().toISOString(), event: `stopped (budget/stall) after ${result.iterations} iteration(s)` });
-    warn(`Hunt stopped without completion — review state and resume with: gg hunt resume ${c.id}`);
+    warn(`Hunt stopped without completion — review state and resume with: goblin hunt resume ${c.id}`);
   }
   saveContract(cwd, latest);
 }
@@ -270,8 +270,8 @@ function detachPursue(cwd: string, id: string): void {
   child.unref();
   ok(`Hunt running detached (pid ${child.pid}).`);
   print(dim(`  logs:   tail -f ${logPath(cwd, id)}`));
-  print(dim(`  status: gg hunt`));
-  print(dim(`  pause:  gg hunt pause ${id}`));
+  print(dim(`  status: goblin hunt`));
+  print(dim(`  pause:  goblin hunt pause ${id}`));
 }
 
 // ── Dispatcher ───────────────────────────────────────────────────────────────
@@ -303,10 +303,10 @@ export async function runHunt(
   }
 
   // Create a new hunt from an objective.
-  if (!commandExists(grokBin)) exitWithError("grok not found on PATH. Run `gg setup` first.");
+  if (!commandExists(grokBin)) exitWithError("grok not found on PATH. Run `goblin setup` first.");
   const objective = args.join(" ").trim();
   if (!objective) {
-    warn('gg hunt needs an objective. Example: gg hunt "migrate the config loader to zod and keep tests green"');
+    warn('goblin hunt needs an objective. Example: goblin hunt "migrate the config loader to zod and keep tests green"');
     return;
   }
   const repoRoot = gitRepoRoot(cwd) ?? cwd;
@@ -386,7 +386,7 @@ function printStatus(cwd: string): void {
   const all = listContracts(cwd);
   header("GrokGoblin hunts");
   if (!all.length) {
-    print(dim("No hunts yet. Start one: gg hunt \"<objective>\""));
+    print(dim("No hunts yet. Start one: goblin hunt \"<objective>\""));
     return;
   }
   for (const c of all) {

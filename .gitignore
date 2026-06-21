@@ -21,7 +21,7 @@ SESSION*.md
 TODO.local.md
 *.local.md
 research/
-forage/
+.grokgoblin/forage/
 
 # Secrets & credentials — never commit (defensive)
 .env

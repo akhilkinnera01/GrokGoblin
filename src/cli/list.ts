@@ -57,7 +57,7 @@ export async function runList(cwd: string, args: string[]): Promise<void> {
     header("Skills");
     print(dim(`${skillsDir}`));
     if (skills.length === 0) {
-      info("No skills installed — run `gg setup`.");
+      info("No skills installed — run `goblin setup`.");
     } else {
       print(skills.map((s) => `  /${s}`).join("\n"));
     }

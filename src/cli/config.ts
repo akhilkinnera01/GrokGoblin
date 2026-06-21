@@ -23,7 +23,7 @@ import {
 
 // Keys GrokGoblin surfaces as the "managed" grok settings. These are real grok
 // config.toml keys (see grok README → Configuration). grok has no `effort`
-// config key — reasoning effort is a headless-only flag (`gg exec --effort`).
+// config key — reasoning effort is a headless-only flag (`goblin exec --effort`).
 const MANAGED_KEYS: Array<{ key: string; desc: string }> = [
   { key: "models.default", desc: "default model for new sessions" },
   { key: "models.web_search", desc: "model used by the web_search tool" },
@@ -37,7 +37,7 @@ function showConfig(grokHome: string): void {
   header("GrokGoblin-managed grok config");
   print(dim(`File: ${configPath}`));
   if (!existsSync(configPath)) {
-    warn("config.toml not found — run `gg setup`.");
+    warn("config.toml not found — run `goblin setup`.");
     return;
   }
   readGrokConfig(grokHome); // validates parseability
@@ -68,7 +68,7 @@ export async function runConfig(
 
   if (sub === "get") {
     const key = args[1];
-    if (!key) exitWithError("usage: gg config get <key>  (e.g. models.default)");
+    if (!key) exitWithError("usage: goblin config get <key>  (e.g. models.default)");
     const value = getGrokConfigValue(grokHome, key);
     if (value === undefined) {
       warn(`${key} is not set`);
@@ -82,7 +82,7 @@ export async function runConfig(
     const key = args[1];
     const value = args[2];
     if (!key || value === undefined) {
-      exitWithError("usage: gg config set <key> <value>  (e.g. models.default grok-build)");
+      exitWithError("usage: goblin config set <key> <value>  (e.g. models.default grok-build)");
     }
     if (key === "models.default" && !KNOWN_MODELS.includes(value!)) {
       warn(`'${value}' is not a known grok model (${KNOWN_MODELS.join(", ")}). Setting anyway.`);
@@ -93,10 +93,10 @@ export async function runConfig(
   }
 
   if (sub === "model") {
-    // Shortcut: `gg config model fast|frontier|<id>`
+    // Shortcut: `goblin config model fast|frontier|<id>`
     const choice = args[1];
     if (!choice) {
-      exitWithError(`usage: gg config model <frontier|fast|${KNOWN_MODELS.join("|")}>`);
+      exitWithError(`usage: goblin config model <frontier|fast|${KNOWN_MODELS.join("|")}>`);
     }
     const model =
       choice === "frontier"

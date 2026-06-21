@@ -1,3 +1,8 @@
+---
+name: tdd
+description: "Test-driven development flow — red, green, refactor in strict order. Use when you want a failing test written before the implementation and kept green through refactoring."
+---
+
 # /tdd
 
 Test-driven development flow.
