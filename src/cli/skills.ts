@@ -29,7 +29,10 @@ function readSkillMeta(skillDir: string, name: string): SkillMeta {
   let description = "";
   if (existsSync(skillMdPath)) {
     const content = readFileSync(skillMdPath, "utf-8");
-    const descMatch = content.match(/^(?:#[^\n]+\n+)?([^\n#][^\n]+)/m);
+    // Prefer the grok-standard frontmatter `description:` (what grok's slash
+    // picker shows); fall back to the first prose line for legacy skills.
+    const fm = content.match(/^---\n[\s\S]*?\ndescription:\s*"?([^"\n]+)"?/m);
+    const descMatch = fm ?? content.match(/^(?:#[^\n]+\n+)?([^\n#][^\n]+)/m);
     description = descMatch?.[1]?.trim() ?? "";
     if (description.startsWith("*") || description.startsWith(">")) {
       description = description.slice(1).trim();
@@ -66,7 +69,7 @@ export async function runSkillsList(cwd: string): Promise<void> {
   print("");
 
   if (skills.length === 0) {
-    warn("No skills installed. Run `gg setup` to install them.");
+    warn("No skills installed. Run `goblin setup` to install them.");
     return;
   }
 
@@ -88,7 +91,7 @@ export async function runSkillsInfo(
   const skillDir = join(skillsDir, skillName);
 
   if (!existsSync(skillDir)) {
-    warn(`Skill '${skillName}' not found. Run \`gg skills list\` to see installed skills.`);
+    warn(`Skill '${skillName}' not found. Run \`goblin skills list\` to see installed skills.`);
     process.exit(1);
   }
 

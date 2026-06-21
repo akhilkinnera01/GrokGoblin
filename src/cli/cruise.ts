@@ -56,7 +56,7 @@ export interface LoopOptions {
   relentless?: boolean;
   /**
    * Optional control hook checked at the top of every iteration. Lets an outer
-   * driver (e.g. `gg hunt`) pause/stop a long or detached run between iterations
+   * driver (e.g. `goblin hunt`) pause/stop a long or detached run between iterations
    * without coupling the loop to goal storage. Return "stop" or "pause" to break.
    */
   controlCheck?: () => "continue" | "pause" | "stop";
@@ -218,7 +218,7 @@ function verificationGate(ctx?: PromptCtx): string[] {
 
 function buildCruisePrompt(ctx: PromptCtx): string {
   return [
-    "You are running autonomously inside `gg cruise` — a headless loop that re-invokes you each iteration to drive a task end-to-end.",
+    "You are running autonomously inside `goblin cruise` — a headless loop that re-invokes you each iteration to drive a task end-to-end.",
     `Iteration ${ctx.iteration} of at most ${ctx.maxIterations}.`,
     "",
     "## Goal",
@@ -246,7 +246,7 @@ function buildCruisePrompt(ctx: PromptCtx): string {
 
 function buildQuestPrompt(ctx: PromptCtx): string {
   return [
-    "You are running autonomously inside `gg quest` — a durable, checkpointed multi-goal loop that re-invokes you each iteration.",
+    "You are running autonomously inside `goblin quest` — a durable, checkpointed multi-goal loop that re-invokes you each iteration.",
     `Iteration ${ctx.iteration} of at most ${ctx.maxIterations}.`,
     "",
     "## Overall objective",
@@ -267,7 +267,7 @@ function buildQuestPrompt(ctx: PromptCtx): string {
 
 function buildRalphPrompt(ctx: PromptCtx): string {
   return [
-    "You are running autonomously inside `gg ralph` — a persistent completion loop for a single task that re-invokes you each iteration until it's truly done.",
+    "You are running autonomously inside `goblin ralph` — a persistent completion loop for a single task that re-invokes you each iteration until it's truly done.",
     `Iteration ${ctx.iteration} of at most ${ctx.maxIterations}.`,
     "",
     "## Task",
@@ -298,7 +298,7 @@ async function runLoop(
     exitWithError("grok not found on PATH. Install grok first.");
   }
   if (!goal.trim()) {
-    exitWithError(`gg ${spec.kind} requires a goal, e.g. \`gg ${spec.kind} "add tests for parser"\``);
+    exitWithError(`goblin ${spec.kind} requires a goal, e.g. \`goblin ${spec.kind} "add tests for parser"\``);
   }
   if (!options.skipGitRepoCheck && !isGitRepo(cwd)) {
     exitWithError(`Not in a git repository. ${spec.kind} edits code — run inside a repo or pass --skip-git-repo-check.`);
@@ -396,7 +396,7 @@ async function runLoop(
   let halted: "pause" | "stop" | undefined;
 
   for (let i = 1; i <= maxIterations; i++) {
-    // Honor an external pause/stop request (e.g. `gg hunt pause`) at the safe
+    // Honor an external pause/stop request (e.g. `goblin hunt pause`) at the safe
     // boundary between iterations before spending another grok call.
     const control = options.controlCheck?.() ?? "continue";
     if (control !== "continue") {
@@ -607,7 +607,7 @@ function buildGoblinsPrompt(
   preferredRole: string
 ): string {
   return [
-    "You are the LEAD GOBLIN orchestrating a multi-goblin effort inside `gg goblins` —",
+    "You are the LEAD GOBLIN orchestrating a multi-goblin effort inside `goblin swarm` —",
     "a headless loop that re-invokes you each iteration until the work is verifiably correct.",
     `Iteration ${ctx.iteration} of at most ${ctx.maxIterations}.`,
     "",

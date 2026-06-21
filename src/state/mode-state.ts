@@ -110,7 +110,7 @@ export function getActiveModes(cwd: string, sessionId?: string): GgMode[] {
     "dig",
     "quest",
     "research",
-    "team",
+    "swarm",
   ];
   return modes.filter((m) => {
     const state = readModeState(m, cwd, sessionId);

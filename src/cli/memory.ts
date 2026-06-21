@@ -33,7 +33,7 @@ function isMemoryEnabled(grokHome: string): boolean {
 function showStatus(grokHome: string): void {
   const root = memoryRoot(grokHome);
   header("GrokGoblin Memory (grok cross-session memory)");
-  print(`${dim("enabled:")} ${isMemoryEnabled(grokHome) ? "yes" : bold("no — run `gg memory on`")}`);
+  print(`${dim("enabled:")} ${isMemoryEnabled(grokHome) ? "yes" : bold("no — run `goblin memory on`")}`);
   print(`${dim("store:")}   ${root}`);
   print("");
 
@@ -56,7 +56,7 @@ function showStatus(grokHome: string): void {
     print(`  ${bold(entry)}  MEMORY.md ${dim(memSize)}  ${dim(`${sessCount} session logs`)}`);
   }
   print("");
-  print(dim("Search: gg memory search \"<query>\"   ·   Edit global: gg memory edit"));
+  print(dim("Search: goblin memory search \"<query>\"   ·   Edit global: goblin memory edit"));
 }
 
 export async function runMemory(cwd: string, args: string[]): Promise<void> {
@@ -99,9 +99,9 @@ export async function runMemory(cwd: string, args: string[]): Promise<void> {
 
   if (sub === "search") {
     const query = args.slice(1).join(" ").trim();
-    if (!query) exitWithError('usage: gg memory search "<query>"');
+    if (!query) exitWithError('usage: goblin memory search "<query>"');
     if (!isMemoryEnabled(grokHome)) {
-      warn("memory is disabled — run `gg memory on` first.");
+      warn("memory is disabled — run `goblin memory on` first.");
       return;
     }
     const grokBin = process.env["GROK_BIN"] ?? "grok";

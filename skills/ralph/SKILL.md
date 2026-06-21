@@ -1,3 +1,8 @@
+---
+name: ralph
+description: "Persistent single-task completion loop. Use to drive one task to done — reflecting and self-correcting each iteration, stopping only when the work is genuinely complete or explicitly blocked."
+---
+
 # /ralph
 
 Persistent completion loop with reflection and verification.

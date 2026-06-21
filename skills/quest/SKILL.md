@@ -1,3 +1,8 @@
+---
+name: quest
+description: "Durable multi-goal execution with ledger checkpoints. Use for work too large for a single ralph run — breaks it into checkpointed goals and works through them sequentially so progress is never lost."
+---
+
 # /quest
 
 Durable multi-goal execution with ledger checkpoints.

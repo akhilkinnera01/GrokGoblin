@@ -14,7 +14,7 @@ export type GgMode =
   | "dig"
   | "quest"
   | "research"
-  | "team";
+  | "swarm";
 
 export type ModelClass = "frontier" | "fast" | "standard";
 
@@ -27,7 +27,7 @@ export interface GgConfig {
   ggStateDir: string;
   installedSkills: string[];
   installMode: "standard";
-  teamEnabled: boolean;
+  subagentsEnabled: boolean;
   mcpEnabled: boolean;
 }
 
@@ -139,7 +139,7 @@ export interface SetupOptions {
   scope?: SetupScope;
   force?: boolean;
   mergeAgents?: boolean;
-  team?: boolean;
+  subagents?: boolean;
   mcp?: boolean;
   skip?: string[];
 }

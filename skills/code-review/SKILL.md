@@ -1,3 +1,8 @@
+---
+name: code-review
+description: "Comprehensive code and PR review covering correctness, edge cases, security, and error handling. Use to review a diff, staged changes, or a pull request before merging."
+---
+
 # /code-review
 
 Comprehensive code and PR review.

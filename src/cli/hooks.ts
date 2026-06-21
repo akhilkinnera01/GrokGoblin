@@ -17,7 +17,7 @@ export async function runHooksList(cwd: string): Promise<void> {
   header("Registered Hooks");
 
   if (!existsSync(hooksPath)) {
-    warn("hooks/hooks.json not found. Run `gg setup` to install hooks.");
+    warn("hooks/hooks.json not found. Run `goblin setup` to install hooks.");
     return;
   }
 
@@ -36,7 +36,7 @@ export async function runHooksList(cwd: string): Promise<void> {
       for (const group of groups) {
         for (const h of group.hooks) {
           const isGg =
-            h.command.includes("gg hook") ||
+            h.command.includes("goblin hook") ||
             h.command.includes("grokgoblin");
           print(
             `  ${bold(event.padEnd(14))} ${dim(group.matcher.padEnd(16))} ${isGg ? "[GrokGoblin]" : "     "} ${dim(h.command.slice(0, 50))}`

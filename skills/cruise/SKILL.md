@@ -1,3 +1,8 @@
+---
+name: cruise
+description: "Full autonomous pipeline — dig, goblinplan, quest, tdd, code-review in sequence with no manual handoffs. Use when scope is trusted and you want hands-off end-to-end execution."
+---
+
 # /cruise
 
 Full autonomous pipeline: **dig → goblinplan → quest → tdd → code-review**.
