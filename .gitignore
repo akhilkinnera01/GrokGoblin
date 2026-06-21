@@ -11,6 +11,7 @@ dist/
 TEST_REPORT.md
 PROOF.md
 proof.md
+.gg-notes/
 
 # Secrets & credentials — never commit (defensive)
 .env

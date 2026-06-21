@@ -61,7 +61,8 @@ It installs natively into grok — **skills, hooks, agent roles, and `AGENTS.md`
 
 **Why use it**
 
-- **It finishes the job.** The autonomous loops (`ralph`, `quest`, `cruise`) re-invoke grok across turns and only stop on a *verified* completion — grok must run your build/tests and see them pass before it's allowed to declare done.
+- **It finishes the job.** The autonomous loops (`ralph`, `quest`, `cruise`, `goblins`) re-invoke grok across turns and only stop on a *verified* completion. The harness itself — not the model — runs your build/tests after each round (auto-detected, or `--verify "<cmd>"`); the loop can't declare done while that check is red. No runnable check? An independent QC-reviewer goblin grades the work instead. (Answer to "you're just grading vibes twice.")
+- **It's token-aware.** Loops start on the fast model and only escalate to the frontier model when they stall; verification is a real command (≈0 model tokens), context stays lean per iteration, and budgets (`--max-iterations`, `--max-turns`, per-iteration timeout) stop a stuck run instead of burning tokens.
 - **It thinks in specialists.** Work is delegated to themed **goblins** (analyst, planner, debugger, reviewer, …) running in parallel.
 - **It uses grok's real strengths.** Live **web/X grounding**, big context (512K on `grok-build`), speed routing to the fast model, and grok's native cross-session **memory**.
 - **It stays out of your way.** A small, deliberate set of `/` commands — no command sprawl.
@@ -252,14 +253,18 @@ gg ralph  "fix the flaky test in auth.test.ts"          # one task, to completio
 gg quest  "migrate the API from v1 to v2"               # multi-goal, checkpointed
 gg cruise "add a /health endpoint with tests"           # full pipeline
 ```
-All three loop until grok reports a **verified** completion (it must run the build/tests first) or hit the iteration cap. Durable state lands under `.grokgoblin/<kind>/`. Add `--best-of 3` for higher quality, `--fast` for speed, `--max-iterations N` to bound the run.
+All of these loop until completion is **verified** — the harness runs your build/tests itself after each round and won't let the loop stop while the check is red — or until they hit the iteration cap. Durable state lands under `.grokgoblin/<kind>/`.
 
-**Parallel specialist review**
+Loop flags: `--verify "<cmd>"` (set the check explicitly; otherwise it's auto-detected), `--no-verify` (disable), `--max-turns N` (bound each iteration), `--max-iterations N` (bound the run), `--best-of 3` (higher quality), `--fast` / `--model <id>` (pin a model; otherwise the loop tiers fast → frontier on stall).
+
+**Verified multi-goblin work**
 ```bash
-gg goblins 3 "audit this service for security and edge cases"
-gg goblins 2:warden "threat-model the payment flow"      # bias toward a role
-gg goblins --tmux 4 "refactor across these modules"      # visual multi-pane
+gg goblins 3 "audit this service and fix the security findings"   # fan out + gate until correct
+gg goblins 2:warden "threat-model the payment flow"               # bias toward a role
+gg goblins --once 3 "summarize these docs"                        # legacy single-shot (no loop)
+gg goblins --tmux 4 "refactor across these modules"               # legacy visual multi-pane
 ```
+By default `gg goblins` fans the work out to specialist goblins and then runs the **same verification gate** as the loops above, repeating until the work is correct.
 
 ---
 
@@ -281,7 +286,7 @@ gg goblins --tmux 4 "refactor across these modules"      # visual multi-pane
 | `gg cruise <goal>` | Full pipeline loop: **dig → goblinplan → quest → tdd → code-review**. |
 | `gg quest <goal>` | Durable multi-goal loop — decomposes into checkpointed sub-goals. |
 | `gg ralph <task>` | Persistent single-task completion loop. |
-| `gg goblins [N[:role]] <task>` | Orchestrate up to N parallel specialist goblins (add `--tmux` for panes). |
+| `gg goblins [N[:role]] <task>` | Verified loop: fan out to up to N specialist goblins, gate until correct (`--once` single-shot, `--tmux` panes). |
 
 ### Memory
 | Command | Description |
@@ -315,7 +320,7 @@ gg goblins --tmux 4 "refactor across these modules"      # visual multi-pane
 | Command | Description |
 |---|---|
 | `gg setup` | Install skills, hooks, roles & `AGENTS.md` into `~/.grok` (`--force` to overwrite, `--scope project`). |
-| `gg doctor` | Diagnose the install and grok integration (`--verbose`, `--team`). |
+| `gg doctor` | Diagnose the install and grok integration (`--verbose`, `--goblins`). |
 | `gg hooks list` | List registered hooks. |
 | `gg update` · `gg uninstall` · `gg version` | Lifecycle. |
 
