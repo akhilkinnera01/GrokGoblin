@@ -483,7 +483,7 @@ gg uninstall    # remove GrokGoblin hooks, roles & config keys (skills/AGENTS.md
 
 ## Credits
 
-Built by akhilkinnera01.
+Inspired by the `oh-my-*` developer-tooling ecosystem, including [oh-my-codex](https://github.com/Yeachan-Heo/oh-my-codex) by Yeachan Heo.
 
 ## License
 
