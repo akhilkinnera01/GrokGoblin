@@ -28,6 +28,8 @@ type CliCommand =
   | "ralph"
   | "hunt"
   | "goal"
+  | "review"
+  | "ship"
   | "state"
   | "session"
   | "agents"
@@ -50,6 +52,7 @@ const BOOLEAN_FLAGS = new Set([
   "always-approve", "history", "branch", "all", "merged", "help", "version",
   "merge-agents", "continue", "no-subagents", "no-digest", "no-verify", "once",
   "goblins", "parallel", "detach", "relentless",
+  "staged", "post", "pr", "push",
 ]);
 
 function parseArgs(argv: string[]): {
@@ -138,6 +141,8 @@ function resolveCliInvocation(argv: string[]): ResolvedCliInvocation {
     "ralph",
     "hunt",
     "goal",
+    "review",
+    "ship",
     "state",
     "session",
     "agents",
@@ -212,6 +217,8 @@ function printHelp(): void {
   print("  gg ralph <task>            Persistent single-task completion loop");
   print("  gg hunt \"<objective>\"       Autonomous goal: triage → pursue until verified (--detach to run for hours)");
   print(dim("    hunt lifecycle: gg hunt (status) · gg hunt pause|resume|clear [id]"));
+  print("  gg review [PR#|range]      Independent 2-lane code review (nitpicker + warden), severity-rated · --staged --post");
+  print("  gg ship [message]          Verify → style-matched commit on a safe branch · --pr (push + open PR) --no-verify");
   print("  gg goblins [N] <task>      Verified multi-goblin loop: fan out to N goblins, gate until correct");
   print(dim("    goblins flags: --parallel (worktree-isolated fan-out) --once (single-shot) --tmux (panes)"));
   print(dim("  loop flags: --max-iterations <n> --max-turns <n> --verify \"<cmd>\" --no-verify --fast --model <id> --best-of <n> --skip-git-repo-check"));
@@ -583,6 +590,18 @@ export async function main(argv: string[]): Promise<void> {
       // `goal` is an alias for discoverability; the feature is Hunt.
       const { runHunt } = await import("./hunt.js");
       await runHunt(cwd, args, flags);
+      break;
+    }
+
+    case "review": {
+      const { runReview } = await import("./review.js");
+      await runReview(cwd, args, flags);
+      break;
+    }
+
+    case "ship": {
+      const { runShip } = await import("./ship.js");
+      await runShip(cwd, args, flags);
       break;
     }
 
