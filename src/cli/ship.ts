@@ -198,7 +198,10 @@ export async function runShip(
     }
     const diff = gitOut(repoRoot, ["diff", "HEAD"]);
     // --split → atomic commits by concern; else one style-matched commit.
-    if (flags["split"] && !explicitMsg) {
+    if (flags["split"] && explicitMsg) {
+      warn("--split groups commits automatically — ignoring the explicit message (it would only apply to one commit).");
+    }
+    if (flags["split"]) {
       step("Splitting into atomic commits by concern...");
       const made = atomicCommits(repoRoot, diff, grokHome, grokBin);
       if (made.length) {
@@ -215,6 +218,13 @@ export async function runShip(
     }
   } else {
     info(`${ahead} commit(s) on ${workBranch} ahead of ${base} — ready to ship.`);
+  }
+  // When multiple commits are already on the branch (ahead > 0, !dirty), collect
+  // all subjects so the PR body summarises the full changeset, not just the tip.
+  let prBodyExtra = "";
+  if (!dirty && ahead > 1) {
+    const subjects = gitOut(repoRoot, ["log", "--pretty=format:- %s", `${base}..HEAD`]).trim();
+    prBodyExtra = `**Commits:**\n${subjects}\n\n`;
   }
   if (!message) message = gitOut(repoRoot, ["log", "-1", "--pretty=%s"]).trim();
 
@@ -243,7 +253,7 @@ export async function runShip(
       return;
     }
     const prBody = [
-      message.split("\n").slice(1).join("\n").trim() || message,
+      prBodyExtra || (message.split("\n").slice(1).join("\n").trim() || message),
       "",
       "---",
       `**Verification:** ${evidence}`,

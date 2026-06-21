@@ -109,7 +109,7 @@ gg doctor
 Want the very latest unreleased commit? `npx github:akhilkinnera01/GrokGoblin setup` builds and runs it straight from the repo.
 </details>
 
-> **Heads-up on the `gg` name:** if you use oh-my-zsh, `gg` is aliased to `git gui citool`. Either remove that alias, or just use the full `grokgoblin` command — they're identical. GrokGoblin's own hooks always call `grokgoblin`, so they can never be shadowed.
+> **Heads-up on the `gg` name:** some shells alias `gg` to `git gui citool`. If that conflicts, use the full `grokgoblin` command instead — they're identical. GrokGoblin's own hooks always call `grokgoblin`, so they can never be shadowed.
 
 To verify end-to-end against grok:
 
@@ -453,7 +453,7 @@ Add this to your project's `.gitignore`:
 ## Troubleshooting & FAQ
 
 **`gg` runs `git gui citool` instead of GrokGoblin.**
-oh-my-zsh aliases `gg`. Use `grokgoblin` instead, or `unalias gg`.
+Your shell has `gg` aliased to something else. Use `grokgoblin` instead, or run `unalias gg`.
 
 **`gg doctor` shows failures.**
 Run `gg doctor --verbose` for fix commands. Most issues are resolved by `gg setup --force`. Make sure `grok` is on your PATH and you've run `grok login`.
@@ -483,7 +483,7 @@ gg uninstall    # remove GrokGoblin hooks, roles & config keys (skills/AGENTS.md
 
 ## Credits
 
-Inspired by the `oh-my-*` developer-tooling ecosystem, including [oh-my-codex](https://github.com/Yeachan-Heo/oh-my-codex) by Yeachan Heo.
+Built by akhilkinnera01.
 
 ## License
 

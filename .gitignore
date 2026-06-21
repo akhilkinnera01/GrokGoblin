@@ -7,11 +7,21 @@ dist/
 .omg/
 .serena/
 
-# Local-only verification notes (not shipped)
+# Local-only docs — verification notes, design docs, planning, scratch (never ship)
 TEST_REPORT.md
 PROOF.md
 proof.md
 .gg-notes/
+DESIGN*.md
+PLAN*.md
+NOTES*.md
+SCRATCH*.md
+DRAFT*.md
+SESSION*.md
+TODO.local.md
+*.local.md
+research/
+forage/
 
 # Secrets & credentials — never commit (defensive)
 .env

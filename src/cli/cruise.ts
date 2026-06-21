@@ -540,8 +540,8 @@ async function runLoop(
       return "escalate";
     }
     // Relentless mode: never give up early — keep grinding until completion or the
-    // iteration budget is spent (Codex /goal "run until correct" behavior). The
-    // budget caps total spend, so this is bounded, just not stuck-aborted.
+    // iteration budget is spent. The budget caps total spend, so this is bounded,
+    // just not stuck-aborted.
     if (options.relentless) {
       stuckRounds = 0;
       warn("No progress — relentless mode, continuing until the iteration budget.");

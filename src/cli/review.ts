@@ -12,12 +12,11 @@ import { leaderSocketArgs } from "../utils/leader.js";
 import { print, header, ok, warn, info, step, dim, bold, exitWithError } from "../utils/print.js";
 
 // `gg review` — independent, severity-rated code review for grok.
-// Top-tier principles (2026): two INDEPENDENT review lanes run in parallel as
-// separate grok processes (never self-review; native spawn_subagent is
-// unreliable headless), high-signal severity rating (lead with the equivalent of
-// Codex P0/P1), file:line findings, repo AGENTS.md review guidelines honored, and
-// a DETERMINISTIC verdict synthesis. If a lane can't run, the review is "unavailable"
-// and blocks — it never falls back to approving.
+// Two INDEPENDENT review lanes run in parallel as separate grok processes (never
+// self-review; native spawn_subagent is unreliable headless), high-signal severity
+// rating (CRITICAL/HIGH/MEDIUM/LOW), file:line findings, repo AGENTS.md review
+// guidelines honored, and a DETERMINISTIC verdict synthesis. If a lane can't run,
+// the review is "unavailable" and blocks — it never falls back to approving.
 
 const MAX_DIFF_BYTES = 60_000;
 const LANE_TIMEOUT_MS = 8 * 60 * 1000;
@@ -225,7 +224,7 @@ export async function runReview(
 
   // Optional: post the verdict to the GitHub PR (outward-facing → opt-in only).
   if (target.pr && flags["post"]) {
-    await postToPr(repoRoot, target.pr, verdict, inspOut, wardOut);
+    postToPr(repoRoot, target.pr, verdict, inspOut, wardOut);
   } else if (target.pr) {
     print(dim("(add --post to publish this review to the PR)"));
   }

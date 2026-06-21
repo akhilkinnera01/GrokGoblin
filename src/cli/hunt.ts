@@ -21,9 +21,11 @@ import {
   type LoopResult,
 } from "./cruise.js";
 import { runGoblinsParallel } from "./parallel.js";
+import { runChecker } from "./checker.js";
+import { leaderSocketArgs } from "../utils/leader.js";
 import { print, header, ok, warn, info, step, dim, bold, exitWithError } from "../utils/print.js";
 
-// `gg hunt` — autonomous outcome pursuit (GrokGoblin's answer to Codex /goal).
+// `gg hunt` — autonomous outcome pursuit.
 // One entry point: triage the objective → right-size the strategy → persist a
 // completion CONTRACT → pursue it through the verified loop until the evidence
 // says done or the budget is spent. Lifecycle: status / pause / resume / clear,
@@ -43,6 +45,7 @@ interface GoalContract {
   constraints: string[];
   workers: number;
   budget: { maxIterations: number; maxTurns: number };
+  model?: string;
   relentless: boolean;
   detached: boolean;
   history: { ts: string; event: string }[];
@@ -170,6 +173,7 @@ async function pursue(cwd: string, c: GoalContract): Promise<void> {
     noVerify: !c.verify,
     maxIterations: c.budget.maxIterations,
     maxTurns: c.budget.maxTurns,
+    model: c.model,
     relentless: c.relentless,
     skipGitRepoCheck: true,
     controlCheck,
@@ -195,9 +199,22 @@ async function pursue(cwd: string, c: GoalContract): Promise<void> {
         15 * 60 * 1000
       );
       if (r.stdout) print(r.stdout);
-      // If a deterministic check exists, the single pass is only "complete" when
-      // it actually passes — don't claim verified on a bare exit code.
-      const execOk = c.verify ? runCheck(c.verify, repoRoot, 5 * 60 * 1000).ok : r.ok;
+      // Verification: deterministic check wins (ground truth). When none exists,
+      // fall back to the independent QC reviewer (same as loop strategies) rather
+      // than trusting grok exit code 0, which is nearly always true regardless of
+      // whether the actual deliverable is correct.
+      let execOk: boolean;
+      if (c.verify) {
+        execOk = runCheck(c.verify, repoRoot, 5 * 60 * 1000).ok;
+      } else if (r.ok) {
+        step("  running independent QC reviewer...");
+        const review = runChecker(c.objective, repoRoot, grokHome, grokBin, leaderSocketArgs(grokHome, cwd));
+        execOk = review.pass;
+        if (review.pass) ok("  QC reviewer: PASS");
+        else warn(`  QC reviewer: FAIL — ${review.feedback.slice(0, 300)}`);
+      } else {
+        execOk = false;
+      }
       result = { completed: execOk, iterations: 1 };
       break;
     }
@@ -207,11 +224,15 @@ async function pursue(cwd: string, c: GoalContract): Promise<void> {
     case "cruise":
       result = await runCruise(cwd, c.objective, opts);
       break;
-    case "goblins-parallel":
+    case "goblins-parallel": {
       await runGoblinsParallel(cwd, c.objective, c.workers, opts);
-      // parallel hands off to the verified loop internally; treat reaching here as a pass-through.
-      result = { completed: true, iterations: 1 };
+      // runGoblinsParallel returns void; determine outcome from the verify command
+      // (same as the exec path). If no check exists, treat reaching here as complete
+      // because the sequential fallback inside runGoblinsParallel already ran the QC gate.
+      const parallelOk = c.verify ? runCheck(c.verify, repoRoot, 5 * 60 * 1000).ok : true;
+      result = { completed: parallelOk, iterations: 1 };
       break;
+    }
     case "ralph":
     default:
       result = await runRalph(cwd, c.objective, opts);
@@ -278,7 +299,7 @@ export async function runHunt(
     return printStatus(cwd);
   }
   if (sub === "pause" || sub === "resume" || sub === "clear") {
-    return lifecycle(cwd, sub, args[1]);
+    return await lifecycle(cwd, sub, args[1]);
   }
 
   // Create a new hunt from an objective.
@@ -311,6 +332,7 @@ export async function runHunt(
       maxIterations: flags["max-iterations"] ? Number(flags["max-iterations"]) : DEFAULT_BUDGET.maxIterations,
       maxTurns: flags["max-turns"] ? Number(flags["max-turns"]) : DEFAULT_BUDGET.maxTurns,
     },
+    model: flags["model"] ? String(flags["model"]) : undefined,
     relentless: Boolean(flags["relentless"]),
     detached: Boolean(flags["detach"]),
     history: [{ ts: new Date().toISOString(), event: `created (strategy=${t.strategy}${flags["relentless"] ? ", relentless" : ""})` }],
@@ -327,7 +349,7 @@ export async function runHunt(
   }
 }
 
-function lifecycle(cwd: string, action: string, idArg?: string): void {
+async function lifecycle(cwd: string, action: string, idArg?: string): Promise<void> {
   const c = idArg ? loadContract(cwd, idArg) : currentContract(cwd);
   if (!c) {
     warn(idArg ? `No goal found for id ${idArg}` : "No goals found.");
@@ -346,8 +368,13 @@ function lifecycle(cwd: string, action: string, idArg?: string): void {
     c.status = "active";
     c.history.push({ ts: new Date().toISOString(), event: "resume requested" });
     saveContract(cwd, c);
-    ok(`Resuming hunt ${c.id} (detached).`);
-    detachPursue(cwd, c.id);
+    if (c.detached) {
+      ok(`Resuming hunt ${c.id} (detached).`);
+      detachPursue(cwd, c.id);
+    } else {
+      ok(`Resuming hunt ${c.id} (foreground).`);
+      await pursue(cwd, c);
+    }
   } else if (action === "clear") {
     if (!validGoalId(c.id)) return void warn("Refusing to clear: invalid goal id.");
     rmSync(join(goalsRoot(cwd), c.id), { recursive: true, force: true });
