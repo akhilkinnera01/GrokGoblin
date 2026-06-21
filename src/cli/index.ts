@@ -26,6 +26,10 @@ type CliCommand =
   | "goblins"
   | "team"
   | "ralph"
+  | "hunt"
+  | "goal"
+  | "review"
+  | "ship"
   | "state"
   | "session"
   | "agents"
@@ -46,7 +50,9 @@ const BOOLEAN_FLAGS = new Set([
   "berserk", "yolo", "high", "xhigh", "direct", "tmux", "fast", "plan", "ask",
   "check", "force", "verbose", "team", "mcp", "skip-git-repo-check",
   "always-approve", "history", "branch", "all", "merged", "help", "version",
-  "merge-agents", "continue", "no-subagents", "no-digest",
+  "merge-agents", "continue", "no-subagents", "no-digest", "no-verify", "once",
+  "goblins", "parallel", "detach", "relentless",
+  "staged", "post", "pr", "push", "split",
 ]);
 
 function parseArgs(argv: string[]): {
@@ -133,6 +139,10 @@ function resolveCliInvocation(argv: string[]): ResolvedCliInvocation {
     "goblins",
     "team",
     "ralph",
+    "hunt",
+    "goal",
+    "review",
+    "ship",
     "state",
     "session",
     "agents",
@@ -176,7 +186,7 @@ function printHelp(): void {
   print("  gg uninstall               Remove GrokGoblin hooks and config");
   print("  gg doctor                  Check installation health");
   print("  gg doctor --verbose        Show fix commands for each issue");
-  print("  gg doctor --team           Also check team mode requirements");
+  print("  gg doctor --goblins        Also check goblins --tmux mode requirements");
   print("");
   print(bold("Skills:"));
   print("  gg skills list             List installed skills");
@@ -205,8 +215,13 @@ function printHelp(): void {
   print("  gg cruise <goal>           Full pipeline loop: dig→goblinplan→quest→tdd→code-review");
   print("  gg quest <goal>            Durable multi-goal loop with checkpoints");
   print("  gg ralph <task>            Persistent single-task completion loop");
-  print("  gg goblins [N] <task>       Orchestrate N parallel grok subagents (--tmux for panes)");
-  print(dim("  loop flags: --max-iterations <n> --fast --model <id> --best-of <n> --skip-git-repo-check"));
+  print("  gg hunt \"<objective>\"       Autonomous goal: triage → pursue until verified (--detach to run for hours)");
+  print(dim("    hunt lifecycle: gg hunt (status) · gg hunt pause|resume|clear [id]"));
+  print("  gg review [PR#|range]      Independent 2-lane code review (nitpicker + warden), severity-rated · --staged --post");
+  print("  gg ship [message]          Verify → style-matched commit on a safe branch · --pr (push + open PR) --no-verify");
+  print("  gg goblins [N] <task>      Verified multi-goblin loop: fan out to N goblins, gate until correct");
+  print(dim("    goblins flags: --parallel (worktree-isolated fan-out) --once (single-shot) --tmux (panes)"));
+  print(dim("  loop flags: --max-iterations <n> --max-turns <n> --verify \"<cmd>\" --no-verify --fast --model <id> --best-of <n> --skip-git-repo-check"));
   print("");
   print(bold("Worktrees (isolated workspaces):"));
   print("  gg worktree                List worktrees (status, age, branch)");
@@ -370,7 +385,7 @@ export async function main(argv: string[]): Promise<void> {
       const { runDoctor } = await import("./doctor.js");
       await runDoctor(cwd, {
         verbose: Boolean(flags["verbose"]),
-        team: Boolean(flags["team"]),
+        team: Boolean(flags["goblins"] || flags["team"]),
       });
       break;
     }
@@ -445,6 +460,9 @@ export async function main(argv: string[]): Promise<void> {
         skipGitRepoCheck: Boolean(flags["skip-git-repo-check"]),
         bestOf: flags["best-of"] ? Number(flags["best-of"]) : undefined,
         digest: !flags["no-digest"],
+        verify: flags["verify"] as string | undefined,
+        noVerify: Boolean(flags["no-verify"]),
+        maxTurns: flags["max-turns"] ? Number(flags["max-turns"]) : undefined,
       });
       break;
     }
@@ -463,6 +481,9 @@ export async function main(argv: string[]): Promise<void> {
         skipGitRepoCheck: Boolean(flags["skip-git-repo-check"]),
         bestOf: flags["best-of"] ? Number(flags["best-of"]) : undefined,
         digest: !flags["no-digest"],
+        verify: flags["verify"] as string | undefined,
+        noVerify: Boolean(flags["no-verify"]),
+        maxTurns: flags["max-turns"] ? Number(flags["max-turns"]) : undefined,
       });
       break;
     }
@@ -558,8 +579,29 @@ export async function main(argv: string[]): Promise<void> {
 
     case "goblins":
     case "team": {
-      const { runTeam } = await import("./team.js");
-      await runTeam(cwd, args, flags);
+      // `team` is a hidden back-compat alias; the feature is Goblins.
+      const { runGoblins } = await import("./goblins.js");
+      await runGoblins(cwd, args, flags);
+      break;
+    }
+
+    case "hunt":
+    case "goal": {
+      // `goal` is an alias for discoverability; the feature is Hunt.
+      const { runHunt } = await import("./hunt.js");
+      await runHunt(cwd, args, flags);
+      break;
+    }
+
+    case "review": {
+      const { runReview } = await import("./review.js");
+      await runReview(cwd, args, flags);
+      break;
+    }
+
+    case "ship": {
+      const { runShip } = await import("./ship.js");
+      await runShip(cwd, args, flags);
       break;
     }
 
@@ -595,6 +637,9 @@ export async function main(argv: string[]): Promise<void> {
         skipGitRepoCheck: Boolean(flags["skip-git-repo-check"]),
         bestOf: flags["best-of"] ? Number(flags["best-of"]) : undefined,
         digest: !flags["no-digest"],
+        verify: flags["verify"] as string | undefined,
+        noVerify: Boolean(flags["no-verify"]),
+        maxTurns: flags["max-turns"] ? Number(flags["max-turns"]) : undefined,
       });
       break;
     }

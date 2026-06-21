@@ -60,7 +60,7 @@ export async function runSetup(
 
   const grokHome = resolveGrokHomeForScope(cwd, scope);
   // Hooks are machine-invoked by grok; use the unambiguous `grokgoblin` bin so a
-  // shell alias on `gg` (e.g. oh-my-zsh's git alias) can never shadow them.
+  // shell alias on `gg` can never shadow them.
   const ggBin = process.env["GG_ENTRY_PATH"] ?? "grokgoblin";
 
   header(`grokgoblin setup (v${GG_VERSION})`);

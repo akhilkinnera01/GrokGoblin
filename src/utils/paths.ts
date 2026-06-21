@@ -27,9 +27,11 @@ export const GROKGOBLIN_SKILLS = [
   "goblins",
 ];
 
-// As of grok 0.2.x neither available model supports the `reasoningEffort`
-// parameter (models_cache: supports_reasoning_effort = false), so passing
-// --effort returns HTTP 400. Add model ids here as grok ships effort support.
+// As of grok 0.2.59 neither available model supports the `reasoningEffort`
+// parameter (models_cache: supports_reasoning_effort = false). Passing --effort
+// no longer errors (0.2.56 used to 400) but is a verified NO-OP — effort low vs
+// max produces identical output/latency — so we don't emit it and mislead users.
+// Add model ids here once grok ships models that actually act on effort.
 export const EFFORT_CAPABLE_MODELS: string[] = [];
 
 export function modelSupportsEffort(model: string | undefined): boolean {
