@@ -106,7 +106,8 @@ export async function runGoblinsParallel(
   if (!isGitRepo(cwd)) {
     warn("Parallel goblins needs a git repository (for worktree isolation).");
     info("Falling back to the sequential verified loop.");
-    return runGoblinsVerified(cwd, task, maxWorkers, "", options);
+    await runGoblinsVerified(cwd, task, maxWorkers, "", options);
+    return;
   }
 
   const repoRoot = gitRepoRoot(cwd) ?? cwd;
@@ -125,7 +126,8 @@ export async function runGoblinsParallel(
   const units = planUnits(task, grokHome, grokBin, maxWorkers, leaderArgs);
   if (units.length <= 1) {
     info("Goal doesn't split into independent parallel units — using the sequential verified loop.");
-    return runGoblinsVerified(cwd, task, maxWorkers, "", options);
+    await runGoblinsVerified(cwd, task, maxWorkers, "", options);
+    return;
   }
   ok(`Planned ${units.length} independent unit(s):`);
   units.forEach((u, i) => print(dim(`  ${i + 1}. ${u.title}${u.scope ? ` — ${u.scope}` : ""}`)));

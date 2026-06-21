@@ -49,6 +49,20 @@ export interface LoopOptions {
   maxTurns?: number;
   /** Wall-clock budget per iteration in ms (kills a hung "stuck" iteration). */
   iterationTimeoutMs?: number;
+  /**
+   * Optional control hook checked at the top of every iteration. Lets an outer
+   * driver (e.g. `gg hunt`) pause/stop a long or detached run between iterations
+   * without coupling the loop to goal storage. Return "stop" or "pause" to break.
+   */
+  controlCheck?: () => "continue" | "pause" | "stop";
+}
+
+/** Outcome of a loop run, so an orchestrator can record status. */
+export interface LoopResult {
+  completed: boolean;
+  iterations: number;
+  /** Set when a controlCheck asked the loop to stop/pause. */
+  halted?: "pause" | "stop";
 }
 
 // Loop budgets — tuned so a stuck run recovers/aborts instead of burning tokens.
@@ -271,7 +285,7 @@ async function runLoop(
   goal: string,
   spec: LoopSpec,
   options: LoopOptions = {}
-): Promise<void> {
+): Promise<LoopResult> {
   const grokBin = process.env["GROK_BIN"] ?? "grok";
   const grokHome = resolveGrokHome();
 
@@ -374,8 +388,17 @@ async function runLoop(
   // changed nothing this round.
   let lastTreeSig = "";
   let lastReviewSig = "";
+  let halted: "pause" | "stop" | undefined;
 
   for (let i = 1; i <= maxIterations; i++) {
+    // Honor an external pause/stop request (e.g. `gg hunt pause`) at the safe
+    // boundary between iterations before spending another grok call.
+    const control = options.controlCheck?.() ?? "continue";
+    if (control !== "continue") {
+      halted = control;
+      warn(`Loop ${control === "pause" ? "paused" : "stopped"} by request after ${iterationsRun} iteration(s).`);
+      break;
+    }
     iterationsRun = i;
     step(`Iteration ${i}/${maxIterations} (${currentModel})...`);
     const progressSoFar = existsSync(progressPath)
@@ -531,9 +554,10 @@ async function runLoop(
   }
 
   print(dim(`Full log: ${logPath}`));
+  return { completed, iterations: iterationsRun, halted };
 }
 
-export async function runCruise(cwd: string, goal: string, options: LoopOptions = {}): Promise<void> {
+export async function runCruise(cwd: string, goal: string, options: LoopOptions = {}): Promise<LoopResult> {
   return runLoop(cwd, goal, {
     kind: "cruise",
     title: "Cruise",
@@ -541,7 +565,7 @@ export async function runCruise(cwd: string, goal: string, options: LoopOptions 
   }, options);
 }
 
-export async function runQuest(cwd: string, goal: string, options: LoopOptions = {}): Promise<void> {
+export async function runQuest(cwd: string, goal: string, options: LoopOptions = {}): Promise<LoopResult> {
   return runLoop(cwd, goal, {
     kind: "quest",
     title: "Quest",
@@ -549,7 +573,7 @@ export async function runQuest(cwd: string, goal: string, options: LoopOptions =
   }, options);
 }
 
-export async function runRalph(cwd: string, goal: string, options: LoopOptions = {}): Promise<void> {
+export async function runRalph(cwd: string, goal: string, options: LoopOptions = {}): Promise<LoopResult> {
   return runLoop(cwd, goal, {
     kind: "ralph",
     title: "Ralph",
@@ -602,7 +626,7 @@ export async function runGoblinsVerified(
   workerCount: number,
   preferredRole: string,
   options: LoopOptions = {}
-): Promise<void> {
+): Promise<LoopResult> {
   const roleNames = Object.keys(AGENT_DEFINITIONS);
   // The roster is what makes spawn_subagent available to the leader; even when
   // the spawned worker is unreliable headless, the leader still falls back to

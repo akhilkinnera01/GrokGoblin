@@ -26,6 +26,8 @@ type CliCommand =
   | "goblins"
   | "team"
   | "ralph"
+  | "hunt"
+  | "goal"
   | "state"
   | "session"
   | "agents"
@@ -47,7 +49,7 @@ const BOOLEAN_FLAGS = new Set([
   "check", "force", "verbose", "team", "mcp", "skip-git-repo-check",
   "always-approve", "history", "branch", "all", "merged", "help", "version",
   "merge-agents", "continue", "no-subagents", "no-digest", "no-verify", "once",
-  "goblins", "parallel",
+  "goblins", "parallel", "detach",
 ]);
 
 function parseArgs(argv: string[]): {
@@ -134,6 +136,8 @@ function resolveCliInvocation(argv: string[]): ResolvedCliInvocation {
     "goblins",
     "team",
     "ralph",
+    "hunt",
+    "goal",
     "state",
     "session",
     "agents",
@@ -206,6 +210,8 @@ function printHelp(): void {
   print("  gg cruise <goal>           Full pipeline loop: dig→goblinplan→quest→tdd→code-review");
   print("  gg quest <goal>            Durable multi-goal loop with checkpoints");
   print("  gg ralph <task>            Persistent single-task completion loop");
+  print("  gg hunt \"<objective>\"       Autonomous goal: triage → pursue until verified (--detach to run for hours)");
+  print(dim("    hunt lifecycle: gg hunt (status) · gg hunt pause|resume|clear [id]"));
   print("  gg goblins [N] <task>      Verified multi-goblin loop: fan out to N goblins, gate until correct");
   print(dim("    goblins flags: --parallel (worktree-isolated fan-out) --once (single-shot) --tmux (panes)"));
   print(dim("  loop flags: --max-iterations <n> --max-turns <n> --verify \"<cmd>\" --no-verify --fast --model <id> --best-of <n> --skip-git-repo-check"));
@@ -569,6 +575,14 @@ export async function main(argv: string[]): Promise<void> {
       // `team` is a hidden back-compat alias; the feature is Goblins.
       const { runGoblins } = await import("./goblins.js");
       await runGoblins(cwd, args, flags);
+      break;
+    }
+
+    case "hunt":
+    case "goal": {
+      // `goal` is an alias for discoverability; the feature is Hunt.
+      const { runHunt } = await import("./hunt.js");
+      await runHunt(cwd, args, flags);
       break;
     }
 
