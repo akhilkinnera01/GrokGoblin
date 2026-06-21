@@ -52,7 +52,7 @@ const BOOLEAN_FLAGS = new Set([
   "always-approve", "history", "branch", "all", "merged", "help", "version",
   "merge-agents", "continue", "no-subagents", "no-digest", "no-verify", "once",
   "goblins", "parallel", "detach", "relentless",
-  "staged", "post", "pr", "push",
+  "staged", "post", "pr", "push", "split",
 ]);
 
 function parseArgs(argv: string[]): {

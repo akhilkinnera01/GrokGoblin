@@ -52,6 +52,12 @@ interface GoalContract {
 const DEFAULT_BUDGET = { maxIterations: 30, maxTurns: 60 };
 
 // ── Contract storage (.grokgoblin/goals/<id>/goal.json) ──────────────────────
+// Goal ids are harness-generated as `g-<base36>`. Validate before any filesystem
+// operation so a crafted id (e.g. "../../etc") can never traverse out of the
+// goals directory on read or delete.
+function validGoalId(id: string): boolean {
+  return /^g-[a-z0-9]+$/.test(id);
+}
 function goalsRoot(cwd: string): string {
   return join(resolveGgStateDir(cwd), "goals");
 }
@@ -67,6 +73,7 @@ function saveContract(cwd: string, c: GoalContract): void {
   writeJsonFile(contractPath(cwd, c.id), c);
 }
 function loadContract(cwd: string, id: string): GoalContract | null {
+  if (!validGoalId(id)) return null;
   const p = contractPath(cwd, id);
   return existsSync(p) ? (readJsonFile(p) as GoalContract) : null;
 }
@@ -342,6 +349,7 @@ function lifecycle(cwd: string, action: string, idArg?: string): void {
     ok(`Resuming hunt ${c.id} (detached).`);
     detachPursue(cwd, c.id);
   } else if (action === "clear") {
+    if (!validGoalId(c.id)) return void warn("Refusing to clear: invalid goal id.");
     rmSync(join(goalsRoot(cwd), c.id), { recursive: true, force: true });
     ok(`Cleared hunt ${c.id}. (A running detached process will stop at its next boundary.)`);
   }

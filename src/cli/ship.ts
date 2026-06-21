@@ -63,6 +63,82 @@ function generateCommitMessage(repoRoot: string, diff: string, grokHome: string,
   return msg || "Update";
 }
 
+// Files with pending changes (modified, added, untracked, renamed-target).
+function changedFiles(repoRoot: string): string[] {
+  const out = gitOut(repoRoot, ["status", "--porcelain"]);
+  const files: string[] = [];
+  for (const line of out.split("\n")) {
+    if (!line.trim()) continue;
+    let p = line.slice(3).trim();
+    if (p.includes(" -> ")) p = p.split(" -> ")[1]!.trim(); // rename target
+    p = p.replace(/^"|"$/g, "");
+    if (p) files.push(p);
+  }
+  return files;
+}
+
+// --split: ask grok to group the changes into atomic, dependency-ordered commits
+// (one concern each), then create them. Returns the commit subjects made; empty
+// if it couldn't split (caller then falls back to a single commit).
+function atomicCommits(repoRoot: string, diff: string, grokHome: string, grokBin: string): string[] {
+  const files = changedFiles(repoRoot);
+  if (files.length < 2) return []; // nothing to split
+  const styleSamples = gitOut(repoRoot, ["log", "-30", "--pretty=format:%s"]);
+  const prompt = [
+    "Group these changed files into ATOMIC git commits — one logical concern per commit, in",
+    "dependency order (a commit must not depend on a later one). Every file must appear in exactly",
+    "one group. Match the repo's commit style from these recent subjects:",
+    styleSamples || "(no history — use concise imperative subjects)",
+    "",
+    "## Changed files",
+    files.join("\n"),
+    "",
+    "## Diff (for context)",
+    diff.slice(0, 30_000),
+    "",
+    'Output ONLY a JSON array, no prose: [{"message": "<commit subject>", "files": ["path", ...]}, ...].',
+  ].join("\n");
+  const r = spawnGrokHeadless(
+    prompt,
+    ["-m", DEFAULT_FAST_MODEL, "--always-approve", "--output-format", "plain"],
+    { ...process.env, GROK_HOME: grokHome },
+    grokBin,
+    COMMIT_TIMEOUT_MS
+  );
+  const text = (r.stdout || "").trim();
+  const s = text.indexOf("[");
+  const e = text.lastIndexOf("]");
+  if (s === -1 || e <= s) return [];
+  let plan: { message: string; files: string[] }[];
+  try {
+    plan = JSON.parse(text.slice(s, e + 1));
+  } catch {
+    return [];
+  }
+  const changedSet = new Set(files);
+  const made: string[] = [];
+  for (const group of plan) {
+    if (!group || !group.message || !Array.isArray(group.files)) continue;
+    const groupFiles = group.files.filter((f) => changedSet.has(f));
+    if (!groupFiles.length) continue;
+    const add = runSync("git", ["add", "--", ...groupFiles], { cwd: repoRoot });
+    if (!add.ok) continue;
+    // Only commit if this actually staged something.
+    if (runSync("git", ["diff", "--cached", "--quiet"], { cwd: repoRoot }).ok) continue;
+    const c = runSync("git", ["commit", "-m", group.message], { cwd: repoRoot });
+    if (c.ok) made.push(group.message.split("\n")[0]!);
+  }
+  // Catch-all for anything the plan missed, so the tree ends clean.
+  if (gitOut(repoRoot, ["status", "--porcelain"]).trim()) {
+    runSync("git", ["add", "-A"], { cwd: repoRoot });
+    if (!runSync("git", ["diff", "--cached", "--quiet"], { cwd: repoRoot }).ok) {
+      const c = runSync("git", ["commit", "-m", "chore: remaining changes"], { cwd: repoRoot });
+      if (c.ok) made.push("chore: remaining changes");
+    }
+  }
+  return made;
+}
+
 export async function runShip(
   cwd: string,
   args: string[],
@@ -112,14 +188,27 @@ export async function runShip(
     if (!c.ok) exitWithError(`Could not create branch: ${c.stderr || c.stdout}`);
   }
 
-  // ── 3. Commit (style-matched). --split → atomic commits by concern ───────
+  // ── 3. Commit. --split → atomic commits by concern; else one style-matched commit ─
   const diff = gitOut(repoRoot, ["diff", "HEAD"]);
-  runSync("git", ["add", "-A"], { cwd: repoRoot });
   const explicitMsg = args.join(" ").trim();
-  const message = explicitMsg || generateCommitMessage(repoRoot, diff, grokHome, grokBin);
-  const commit = runSync("git", ["commit", "-m", message], { cwd: repoRoot });
-  if (!commit.ok) exitWithError(`Commit failed: ${commit.stderr || commit.stdout}`);
-  ok(`Committed on ${workBranch}: ${message.split("\n")[0]}`);
+  let message = explicitMsg;
+  if (flags["split"] && !explicitMsg) {
+    step("Splitting into atomic commits by concern...");
+    const made = atomicCommits(repoRoot, diff, grokHome, grokBin);
+    if (made.length) {
+      made.forEach((m) => ok(`  committed: ${m}`));
+      message = made[0]!;
+    }
+  }
+  // Single-commit path (default, or --split fallback if it couldn't split cleanly).
+  if (gitOut(repoRoot, ["status", "--porcelain"]).trim()) {
+    runSync("git", ["add", "-A"], { cwd: repoRoot });
+    message = explicitMsg || generateCommitMessage(repoRoot, diff, grokHome, grokBin);
+    const commit = runSync("git", ["commit", "-m", message], { cwd: repoRoot });
+    if (!commit.ok) exitWithError(`Commit failed: ${commit.stderr || commit.stdout}`);
+    ok(`Committed on ${workBranch}: ${message.split("\n")[0]}`);
+  }
+  if (!message) message = gitOut(repoRoot, ["log", "-1", "--pretty=%s"]).trim();
 
   // ── 4. Outward-facing steps are opt-in (push / PR) ───────────────────────
   if (!flags["pr"] && !flags["push"]) {
