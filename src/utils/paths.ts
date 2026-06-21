@@ -5,7 +5,7 @@ import { existsSync, mkdirSync } from "fs";
 import { randomBytes } from "crypto";
 import type { SetupScope } from "../types/index.js";
 
-export const GG_VERSION = "0.1.0";
+export const GG_VERSION = "0.1.1";
 export const GG_STATE_DIR = ".grokgoblin";
 export const DEFAULT_GROK_HOME = join(homedir(), ".grok");
 export const DEFAULT_FRONTIER_MODEL = "grok-build";

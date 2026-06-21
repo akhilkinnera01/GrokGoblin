@@ -5,7 +5,7 @@ description: "Deep research from the terminal: plans angles, runs parallel web +
 
 # /forage
 
-Intensive, cited deep research — Perplexity/Firecrawl-class, with a live X-feed edge.
+Intensive, cited deep research with a live web + X-feed edge.
 
 ## What it does
 

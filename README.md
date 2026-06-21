@@ -170,7 +170,7 @@ goblin hunt   "ship a working rate limiter" --detach   # triages + runs for hour
 ```
 Each loops until completion is **verified** (or it hits the iteration cap). Tune with `--verify "<cmd>"`, `--max-iterations N`, `--max-turns N`, `--best-of 3`, `--fast` / `--model <id>`.
 
-**Deep research (Perplexity/Codex-style):**
+**Deep research:**
 ```bash
 goblin forage "best embedded KV stores for Rust in 2026"            # quick: plan → parallel search → report
 goblin forage "is HTMX still gaining traction" --deep --facets 6     # + a reflection round that chases gaps

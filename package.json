@@ -1,6 +1,6 @@
 {
   "name": "grokgoblin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "GrokGoblin — a multi-agent orchestration layer for the xAI Grok CLI: structured workflows, real grok subagents, hooks, and durable autonomous execution",
   "license": "MIT",
   "author": {
