@@ -365,4 +365,10 @@ goblin uninstall    # remove hooks, roles & config keys (skills/AGENTS.md kept)
 
 ---
 
+## Credits
+
+Inspired by the `oh-my-*` developer-tooling ecosystem, including [oh-my-codex](https://github.com/Yeachan-Heo/oh-my-codex) by Yeachan Heo.
+
+## License
+
 MIT © akhilkinnera01
