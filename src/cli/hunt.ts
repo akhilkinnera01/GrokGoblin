@@ -324,6 +324,9 @@ function lifecycle(cwd: string, action: string, idArg?: string): void {
     return;
   }
   if (action === "pause") {
+    if (c.status === "complete" || c.status === "blocked") {
+      return void info(`Hunt ${c.id} is already ${c.status} — nothing to pause.`);
+    }
     c.status = "paused";
     c.history.push({ ts: new Date().toISOString(), event: "pause requested" });
     saveContract(cwd, c);
