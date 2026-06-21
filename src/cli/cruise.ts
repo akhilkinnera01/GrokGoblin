@@ -442,7 +442,12 @@ async function runLoop(
         verified = false;
       }
       appendLog(logPath, i, currentModel, result.status, modelClaimsComplete ? "CLAIM" : "CONT", check.ok);
-    } else if (modelClaimsComplete) {
+    } else {
+      // No deterministic check — the independent QC reviewer IS the gate. Run it
+      // every iteration rather than gating on the model remembering to print the
+      // sentinel: small models routinely finish non-testable work (e.g. a data
+      // extraction or a written artifact) without emitting GG-COMPLETE, and that
+      // good work must not be discarded.
       step("  running independent QC reviewer...");
       const review = runChecker(goal, repoRoot, grokHome, grokBin, leaderSocketArgs(grokHome, cwd));
       checkSignature = `${review.pass}:${review.feedback.slice(-400)}`;
@@ -455,9 +460,7 @@ async function runLoop(
         verifyFeedback = review.feedback;
         verified = false;
       }
-      appendLog(logPath, i, currentModel, result.status, "CLAIM", review.pass);
-    } else {
-      appendLog(logPath, i, currentModel, result.status, "CONT", null);
+      appendLog(logPath, i, currentModel, result.status, modelClaimsComplete ? "CLAIM" : "CONT", review.pass);
     }
 
     if (verified) {

@@ -27,17 +27,23 @@ function buildCheckerPrompt(goal: string): string {
     "## The goal the work was supposed to achieve",
     goal,
     "",
+    "## What to judge — and what to IGNORE",
+    "- Judge ONLY whether the actual deliverable for the goal is correct, as it exists in the working tree right now.",
+    "- A correct file that EXISTS ON DISK satisfies the goal. Do NOT require it to be committed to git; 'untracked' / not-in-index is NOT a defect.",
+    "- IGNORE all harness and process metadata — it is NOT part of the goal and must never affect your verdict: the `.grokgoblin/` directory (logs, log.jsonl, progress.md, project.md, memory), `.serena/`, `.git/`, and any record of prior runs, iterations, statuses, or 'stopped/failed' notes. Those describe the tool, not the deliverable.",
+    "- Do not penalize the work for how/when it was produced. Only the end artifact matters.",
+    "",
     "## How to review",
     "1. Derive an explicit checklist of concrete acceptance criteria from the goal above.",
-    "2. Inspect the actual repository/output (read files, run read-only commands) to confirm EACH criterion.",
+    "2. Inspect the actual deliverable file(s) to confirm EACH criterion against their real contents.",
     "3. Cross-check claims against ground truth — e.g. that recorded values actually appear in the source files, that counts match, that nothing was fabricated or skipped.",
-    "4. Look for the common failure: output that looks plausible but is incomplete, mislabeled, or inconsistent with the sources.",
+    "4. Look for the real failure mode: a deliverable that looks plausible but is incomplete, mislabeled, or inconsistent with its sources.",
     "",
     "## Verdict (required)",
     "End your response with EXACTLY one of these on its own final line:",
-    `- \`${QC_PASS}\` — every criterion is met and verified against the actual files.`,
-    `- \`${QC_FAIL}: <the specific, actionable gaps>\` — anything is missing, wrong, unverified, or inconsistent.`,
-    "When in doubt, FAIL with concrete reasons. Do not pass on vibes.",
+    `- \`${QC_PASS}\` — the deliverable meets every criterion, verified against the actual file contents.`,
+    `- \`${QC_FAIL}: <the specific, actionable gaps>\` — the deliverable itself is missing, wrong, unverified, or inconsistent (NOT process/metadata reasons).`,
+    "When in doubt about the DELIVERABLE, FAIL with concrete reasons. Do not pass on vibes; do not fail on process.",
   ].join("\n");
 }
 
@@ -72,12 +78,16 @@ export function runChecker(
   if (result.timedOut || !out) {
     return { pass: false, feedback: "QC reviewer did not return a verdict (timeout/empty) — treating as not verified." };
   }
-  // PASS only on an explicit QC-PASS that is not part of a QC-FAIL line.
-  const hasFail = new RegExp(`${QC_FAIL}`).test(out);
-  const hasPass = new RegExp(`(^|\\n)\\s*${QC_PASS}\\b`).test(out);
-  if (hasPass && !hasFail) {
-    return { pass: true, feedback: "" };
+  // The verdict is the FINAL verdict line, not any mention of the tokens — the
+  // reviewer routinely discusses "QC-FAIL" while ultimately passing (and echoes
+  // the required-format line). Scan from the bottom for the first line that, once
+  // markdown decoration is stripped, starts with a verdict token.
+  const lines = out.split("\n").map((l) => l.trim()).filter(Boolean);
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const bare = lines[i].replace(/^[*_`#>\s-]+/, "").toUpperCase();
+    if (bare.startsWith(QC_PASS)) return { pass: true, feedback: "" };
+    if (bare.startsWith(QC_FAIL)) return { pass: false, feedback: out.slice(-1500) };
   }
-  // Surface the reviewer's stated reasons (tail of the response) as feedback.
+  // No explicit verdict line found — fail closed and surface the response.
   return { pass: false, feedback: out.slice(-1500) };
 }

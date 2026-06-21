@@ -269,6 +269,8 @@ By default `gg goblins` fans the work out to specialist goblins and then runs th
 
 With `--parallel`, the task is split into independent units (disjoint file scopes) that each run as their **own grok process in their own git worktree** — real parallelism, no cross-contamination. Completed branches merge back; a merge conflict is deferred to the verified loop rather than auto-resolved, and the run still only finishes once the verification gate passes. If the goal can't be split cleanly, it falls back to the sequential verified loop automatically.
 
+> **When `--parallel` actually helps:** only when the units are genuinely large or numerous — work a single agent *can't* batch into one pass (e.g. "process these 100 documents"). For ordinary tasks the sequential verified loop is **faster and cheaper**: one agent batches the work in a single call, while parallel pays a planner call + N rate-limited workers. xAI throttles concurrent requests, so parallelism scales sub-linearly. Reach for it deliberately, not by default.
+
 ---
 
 ## Command reference
