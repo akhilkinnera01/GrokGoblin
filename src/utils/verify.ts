@@ -1,5 +1,6 @@
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, statSync } from "fs";
 import { join } from "path";
+import { createHash } from "crypto";
 import { runSync } from "./exec.js";
 
 // The deterministic verification gate. The whole point of GrokGoblin's loop over
@@ -134,6 +135,41 @@ export function runCheck(
     timedOut: Boolean(res.timedOut),
     output: combined.slice(-CHECK_OUTPUT_BYTES),
   };
+}
+
+const MAX_HASH_FILE_BYTES = 1024 * 1024; // cap per-file content hashed
+
+// A side-effect-free fingerprint of the working tree's *content* — tracked
+// modifications (via `git diff HEAD`) plus the contents of untracked files. Used
+// to detect "the maker changed nothing this iteration", so the loop can skip the
+// paid QC-reviewer call on a stuck round instead of re-judging identical work.
+// Returns "" when it can't be determined (not a git repo / git error), which the
+// caller treats as "unknown — don't skip".
+export function workingTreeSignature(repoRoot: string): string {
+  const status = runSync("git", ["status", "--porcelain", "-uall"], { cwd: repoRoot });
+  if (!status.ok) return "";
+  const h = createHash("sha1");
+  h.update(status.stdout);
+  // Content of tracked modifications.
+  const diff = runSync("git", ["diff", "HEAD"], { cwd: repoRoot, maxBuffer: 50 * 1024 * 1024 });
+  h.update(diff.stdout);
+  // Content of untracked files (status code "??"), which git diff doesn't show.
+  for (const line of status.stdout.split("\n")) {
+    if (!line.startsWith("??")) continue;
+    const file = line.slice(3).trim();
+    try {
+      const full = join(repoRoot, file);
+      if (statSync(full).size <= MAX_HASH_FILE_BYTES) {
+        h.update(file);
+        h.update(readFileSync(full));
+      } else {
+        h.update(file + ":large");
+      }
+    } catch {
+      /* ignore unreadable entries */
+    }
+  }
+  return h.digest("hex").slice(0, 16);
 }
 
 // Resolve the effective verify command: explicit --verify wins, then auto-detect,

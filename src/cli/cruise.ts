@@ -8,7 +8,7 @@ import {
 } from "../utils/paths.js";
 import { isGitRepo, gitRepoRoot, spawnGrokHeadless } from "../utils/exec.js";
 import { commandExists } from "../utils/exec.js";
-import { resolveVerifyCommand, runCheck, type CheckResult } from "../utils/verify.js";
+import { resolveVerifyCommand, runCheck, workingTreeSignature, type CheckResult } from "../utils/verify.js";
 import { runChecker } from "./checker.js";
 import { AGENT_DEFINITIONS } from "../agents/definitions.js";
 import { buildRolePrompt } from "../config/subagents.js";
@@ -369,6 +369,11 @@ async function runLoop(
   let stuckRounds = 0;
   let escalated = false;
   let prevSignature = "";
+  // For the QC-reviewer (no deterministic check) path: remember the working-tree
+  // fingerprint + last verdict so we can skip a paid re-review when the maker
+  // changed nothing this round.
+  let lastTreeSig = "";
+  let lastReviewSig = "";
 
   for (let i = 1; i <= maxIterations; i++) {
     iterationsRun = i;
@@ -448,19 +453,31 @@ async function runLoop(
       // sentinel: small models routinely finish non-testable work (e.g. a data
       // extraction or a written artifact) without emitting GG-COMPLETE, and that
       // good work must not be discarded.
-      step("  running independent QC reviewer...");
-      const review = runChecker(goal, repoRoot, grokHome, grokBin, leaderSocketArgs(grokHome, cwd));
-      checkSignature = `${review.pass}:${review.feedback.slice(-400)}`;
-      if (review.pass) {
-        ok("  QC reviewer: PASS");
-        verified = true;
-        verifyFeedback = "";
-      } else {
-        warn("  QC reviewer: FAIL");
-        verifyFeedback = review.feedback;
+      // Token saver: if the maker changed nothing this round, re-reviewing would
+      // just reproduce the prior (failing) verdict — skip the paid QC call.
+      const treeSig = workingTreeSignature(repoRoot);
+      if (treeSig && treeSig === lastTreeSig && lastReviewSig) {
+        info("  no file changes this iteration — skipping QC re-review.");
+        checkSignature = lastReviewSig;
         verified = false;
+        appendLog(logPath, i, currentModel, result.status, "NOCHG", false);
+      } else {
+        step("  running independent QC reviewer...");
+        const review = runChecker(goal, repoRoot, grokHome, grokBin, leaderSocketArgs(grokHome, cwd));
+        checkSignature = `${review.pass}:${review.feedback.slice(-400)}`;
+        lastTreeSig = treeSig;
+        lastReviewSig = checkSignature;
+        if (review.pass) {
+          ok("  QC reviewer: PASS");
+          verified = true;
+          verifyFeedback = "";
+        } else {
+          warn("  QC reviewer: FAIL");
+          verifyFeedback = review.feedback;
+          verified = false;
+        }
+        appendLog(logPath, i, currentModel, result.status, modelClaimsComplete ? "CLAIM" : "CONT", review.pass);
       }
-      appendLog(logPath, i, currentModel, result.status, modelClaimsComplete ? "CLAIM" : "CONT", review.pass);
     }
 
     if (verified) {
