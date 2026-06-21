@@ -149,7 +149,7 @@ export async function runSetup(
   print("Next steps:");
   print(`  1. Run ${dim("goblin doctor")} to verify the installation`);
   print(`  2. Run ${dim("goblin exec --check \"Reply with exactly GrokGoblin-OK\"")} to test grok connectivity`);
-  print(`  3. Launch with ${dim("gg")} from your project directory`);
+  print(`  3. Launch with ${dim("goblin")} from your project directory`);
   print("");
   print("In a Grok session, start with:");
   print(`  ${dim("/dig")} — clarify scope`);
