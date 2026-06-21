@@ -54,6 +54,14 @@ function resolveTarget(
     const d = runSync("git", ["diff", arg], { cwd: repoRoot, maxBuffer: 50 * 1024 * 1024 });
     return { label: arg, diff: d.stdout };
   }
+  // Fresh repo with no commits yet: review all files (intent-to-add so new files
+  // show up in the diff). Without this, `git diff HEAD` fails and a user trying to
+  // review their first files gets nothing.
+  if (!runSync("git", ["rev-parse", "--verify", "HEAD"], { cwd: repoRoot }).ok) {
+    runSync("git", ["add", "-A", "-N"], { cwd: repoRoot });
+    const d = runSync("git", ["diff"], { cwd: repoRoot, maxBuffer: 50 * 1024 * 1024 });
+    return { label: "all files (new repo)", diff: d.stdout };
+  }
   // Default: everything not yet committed (working tree + staged) vs HEAD.
   const d = runSync("git", ["diff", "HEAD"], { cwd: repoRoot, maxBuffer: 50 * 1024 * 1024 });
   return { label: "working tree vs HEAD", diff: d.stdout };
@@ -175,6 +183,7 @@ export async function runReview(
   if (guidelines) print(dim("        following repo review guidelines"));
   print("");
   step("Running two independent review lanes...");
+  print(dim("  (two frontier reviewers in parallel — typically 1–3 min; sit tight)"));
 
   const baseArgs = [
     "-m", DEFAULT_FRONTIER_MODEL,

@@ -149,10 +149,18 @@ export async function runShip(
   const repoRoot = gitRepoRoot(cwd) ?? cwd;
   const grokHome = resolveGrokHome();
 
-  // Must have something to ship.
+  // What is there to ship? Either uncommitted changes, or commits already made on
+  // a feature branch that aren't on the base yet (the "I committed, now PR it" case).
   const dirty = gitOut(repoRoot, ["status", "--porcelain"]).trim();
-  if (!dirty) {
-    warn("Nothing to ship — working tree is clean.");
+  const branch = gitOut(repoRoot, ["rev-parse", "--abbrev-ref", "HEAD"]).trim();
+  const base = defaultBranch(repoRoot);
+  const hasHead = runSync("git", ["rev-parse", "--verify", "HEAD"], { cwd: repoRoot }).ok;
+  const ahead =
+    hasHead && branch !== base
+      ? Number(gitOut(repoRoot, ["rev-list", "--count", `${base}..HEAD`]).trim() || "0")
+      : 0;
+  if (!dirty && ahead === 0) {
+    warn(`Nothing to ship — clean tree and no commits ahead of ${base}.`);
     return;
   }
 
@@ -176,44 +184,48 @@ export async function runShip(
     }
   }
 
-  // ── 2. Safety: never commit straight onto the default branch ─────────────
-  const branch = gitOut(repoRoot, ["rev-parse", "--abbrev-ref", "HEAD"]).trim();
-  const base = defaultBranch(repoRoot);
+  // ── 2. Commit uncommitted work safely; clean+ahead ships existing commits ─
   let workBranch = branch;
-  if (branch === base) {
-    const title = args.join(" ").trim();
-    workBranch = `gg/${slugify(title || gitOut(repoRoot, ["log", "-1", "--pretty=%s"]) || "ship")}`;
-    step(`On ${base} — creating a feature branch ${workBranch}`);
-    const c = runSync("git", ["checkout", "-b", workBranch], { cwd: repoRoot });
-    if (!c.ok) exitWithError(`Could not create branch: ${c.stderr || c.stdout}`);
-  }
-
-  // ── 3. Commit. --split → atomic commits by concern; else one style-matched commit ─
-  const diff = gitOut(repoRoot, ["diff", "HEAD"]);
   const explicitMsg = args.join(" ").trim();
   let message = explicitMsg;
-  if (flags["split"] && !explicitMsg) {
-    step("Splitting into atomic commits by concern...");
-    const made = atomicCommits(repoRoot, diff, grokHome, grokBin);
-    if (made.length) {
-      made.forEach((m) => ok(`  committed: ${m}`));
-      message = made[0]!;
+  if (dirty) {
+    // Safety: never commit straight onto the default branch.
+    if (branch === base) {
+      workBranch = `gg/${slugify(explicitMsg || gitOut(repoRoot, ["log", "-1", "--pretty=%s"]) || "ship")}`;
+      step(`On ${base} — creating a feature branch ${workBranch}`);
+      const c = runSync("git", ["checkout", "-b", workBranch], { cwd: repoRoot });
+      if (!c.ok) exitWithError(`Could not create branch: ${c.stderr || c.stdout}`);
     }
-  }
-  // Single-commit path (default, or --split fallback if it couldn't split cleanly).
-  if (gitOut(repoRoot, ["status", "--porcelain"]).trim()) {
-    runSync("git", ["add", "-A"], { cwd: repoRoot });
-    message = explicitMsg || generateCommitMessage(repoRoot, diff, grokHome, grokBin);
-    const commit = runSync("git", ["commit", "-m", message], { cwd: repoRoot });
-    if (!commit.ok) exitWithError(`Commit failed: ${commit.stderr || commit.stdout}`);
-    ok(`Committed on ${workBranch}: ${message.split("\n")[0]}`);
+    const diff = gitOut(repoRoot, ["diff", "HEAD"]);
+    // --split → atomic commits by concern; else one style-matched commit.
+    if (flags["split"] && !explicitMsg) {
+      step("Splitting into atomic commits by concern...");
+      const made = atomicCommits(repoRoot, diff, grokHome, grokBin);
+      if (made.length) {
+        made.forEach((m) => ok(`  committed: ${m}`));
+        message = made[0]!;
+      }
+    }
+    if (gitOut(repoRoot, ["status", "--porcelain"]).trim()) {
+      runSync("git", ["add", "-A"], { cwd: repoRoot });
+      message = explicitMsg || generateCommitMessage(repoRoot, diff, grokHome, grokBin);
+      const commit = runSync("git", ["commit", "-m", message], { cwd: repoRoot });
+      if (!commit.ok) exitWithError(`Commit failed: ${commit.stderr || commit.stdout}`);
+      ok(`Committed on ${workBranch}: ${message.split("\n")[0]}`);
+    }
+  } else {
+    info(`${ahead} commit(s) on ${workBranch} ahead of ${base} — ready to ship.`);
   }
   if (!message) message = gitOut(repoRoot, ["log", "-1", "--pretty=%s"]).trim();
 
   // ── 4. Outward-facing steps are opt-in (push / PR) ───────────────────────
   if (!flags["pr"] && !flags["push"]) {
     print("");
-    info("Committed locally. Add --pr to push and open a pull request (or --push to just push).");
+    info(
+      dirty
+        ? "Committed locally. Add --pr to push and open a pull request (or --push to just push)."
+        : `Ready on ${workBranch}. Add --pr to push and open a pull request (or --push to just push).`
+    );
     return;
   }
   if (!commandExists("git") || !runSync("git", ["remote"], { cwd: repoRoot }).stdout.trim()) {
