@@ -8,7 +8,7 @@ import {
   resolveAgentsMdPath,
   ggSessionId,
   resolveGgSessionInstructionsPath,
-  DEFAULT_FRONTIER_MODEL,
+  DEFAULT_MODEL,
   DEFAULT_FAST_MODEL,
   modelSupportsEffort,
 } from "../utils/paths.js";

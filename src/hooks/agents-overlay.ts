@@ -130,13 +130,13 @@ Never report a task done on the basis of having written code. Before claiming co
 ## Use grok's strengths
 
 - **Real-time web/X:** proactively \`web_search\` for current library versions, APIs, and best practices while planning — prefer today's sources over training memory for anything fast-moving. Don't wait to be asked.
-- **Speed:** route routine/parallel work to fast workers and goblins; reserve the frontier model for hard reasoning.
+- **Speed:** route routine/parallel work to the fast model and goblins; use the default model when you need its 512K context.
 - Be decisive and direct; bias to action within the verification guardrails above.
 
 ## Model Routing
 
-- Default / leader: \`grok-build\` (frontier reasoning)
-- Fast workers: \`grok-composer-2.5-fast\` (speed-optimized for routine tasks)
+- Default / leader: \`grok-build\` — 512K context, native web/X search
+- Fast workers: \`grok-composer-2.5-fast\` — low-latency, 200K context; no native backend search but invokes the web/X search tools fine
 
 ---
 

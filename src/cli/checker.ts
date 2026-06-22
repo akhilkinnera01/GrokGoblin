@@ -1,12 +1,12 @@
 import { spawnGrokHeadless } from "../utils/exec.js";
-import { DEFAULT_FRONTIER_MODEL } from "../utils/paths.js";
+import { DEFAULT_MODEL } from "../utils/paths.js";
 
 // The independent QC reviewer. Used ONLY when a task has no deterministic check
 // (e.g. data extraction / document summarisation like the investing-journal
 // task). It runs as a SEPARATE grok process — not a spawn_subagent, which dies on
 // auth headless on grok 0.2.59 — so the harness, not the maker, owns the verdict.
 // This is the answer to "you're just grading vibes twice": the reviewer did NOT
-// do the work, runs on the frontier model, and grades against a goal-derived
+// do the work, runs on the default model (grok-build), and grades against a goal-derived
 // rubric while cross-checking claims against the actual files.
 
 export interface CheckerVerdict {
@@ -56,7 +56,7 @@ export function runChecker(
 ): CheckerVerdict {
   const args = [
     "-m",
-    DEFAULT_FRONTIER_MODEL,
+    DEFAULT_MODEL,
     "--always-approve",
     "--max-turns",
     String(QC_MAX_TURNS),

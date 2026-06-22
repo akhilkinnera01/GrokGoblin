@@ -1,5 +1,5 @@
 import type { AgentDefinition } from "../types/index.js";
-import { DEFAULT_FRONTIER_MODEL, DEFAULT_FAST_MODEL } from "../utils/paths.js";
+import { DEFAULT_MODEL, DEFAULT_FAST_MODEL } from "../utils/paths.js";
 
 export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
   sniffer: {
@@ -7,8 +7,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     description:
       "Deep investigation, evidence gathering, and structured analysis. Use when you need thorough understanding before acting.",
     reasoningEffort: "high",
-    model: DEFAULT_FRONTIER_MODEL,
-    modelClass: "frontier",
+    model: DEFAULT_MODEL,
+    modelClass: "default",
     posture: "deep-worker",
     routingRole: "specialist",
     tools: "read-only",
@@ -19,8 +19,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     description:
       "Architecture planning, tradeoff analysis, and implementation strategy. Produces planning artifacts, does not implement.",
     reasoningEffort: "high",
-    model: DEFAULT_FRONTIER_MODEL,
-    modelClass: "frontier",
+    model: DEFAULT_MODEL,
+    modelClass: "default",
     posture: "orchestrator",
     routingRole: "leader",
     tools: "analysis",
@@ -31,8 +31,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     description:
       "System design, API contract definition, and structural decisions. Think before touching code.",
     reasoningEffort: "high",
-    model: DEFAULT_FRONTIER_MODEL,
-    modelClass: "frontier",
+    model: DEFAULT_MODEL,
+    modelClass: "default",
     posture: "deep-worker",
     routingRole: "specialist",
     tools: "analysis",
@@ -43,8 +43,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     description:
       "Clean, precise implementation within approved plan scope. No exploration, no scope creep.",
     reasoningEffort: "medium",
-    model: DEFAULT_FRONTIER_MODEL,
-    modelClass: "frontier",
+    model: DEFAULT_MODEL,
+    modelClass: "default",
     posture: "deep-worker",
     routingRole: "executor",
     tools: "execution",
@@ -55,8 +55,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     description:
       "Root cause analysis and systematic bug diagnosis. Minimize surface area, fix the actual cause.",
     reasoningEffort: "high",
-    model: DEFAULT_FRONTIER_MODEL,
-    modelClass: "frontier",
+    model: DEFAULT_MODEL,
+    modelClass: "default",
     posture: "deep-worker",
     routingRole: "specialist",
     tools: "execution",
@@ -67,8 +67,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     description:
       "Critical evaluation of code changes: correctness, security, simplicity, and edge cases.",
     reasoningEffort: "high",
-    model: DEFAULT_FRONTIER_MODEL,
-    modelClass: "frontier",
+    model: DEFAULT_MODEL,
+    modelClass: "default",
     posture: "deep-worker",
     routingRole: "specialist",
     tools: "read-only",
@@ -79,8 +79,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     description:
       "Security-focused code review: OWASP top 10, injection, auth flaws, data exposure.",
     reasoningEffort: "high",
-    model: DEFAULT_FRONTIER_MODEL,
-    modelClass: "frontier",
+    model: DEFAULT_MODEL,
+    modelClass: "default",
     posture: "deep-worker",
     routingRole: "specialist",
     tools: "read-only",
@@ -91,8 +91,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     description:
       "Bounded evidence gathering from codebase and external sources. Synthesizes findings into structured output.",
     reasoningEffort: "medium",
-    model: DEFAULT_FRONTIER_MODEL,
-    modelClass: "frontier",
+    model: DEFAULT_MODEL,
+    modelClass: "default",
     posture: "deep-worker",
     routingRole: "specialist",
     tools: "read-only",
@@ -103,8 +103,8 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
     description:
       "Runs tests, validates behavior, and confirms implementation meets plan criteria.",
     reasoningEffort: "medium",
-    model: DEFAULT_FRONTIER_MODEL,
-    modelClass: "frontier",
+    model: DEFAULT_MODEL,
+    modelClass: "default",
     posture: "deep-worker",
     routingRole: "specialist",
     tools: "execution",

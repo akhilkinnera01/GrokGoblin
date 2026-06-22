@@ -3,7 +3,7 @@ import { join } from "path";
 import {
   resolveGrokHome,
   resolveGgStateDir,
-  DEFAULT_FRONTIER_MODEL,
+  DEFAULT_MODEL,
   DEFAULT_FAST_MODEL,
 } from "../utils/paths.js";
 import {
@@ -79,8 +79,12 @@ export async function runForage(
   const env = { ...process.env, GROK_HOME: grokHome };
   const facets = clamp(options.facets, 4, 1, 8);
   const deep = options.depth === "deep";
+  // Searchers run on the fast model: it lacks native backend search
+  // (supports_backend_search:false) but still invokes the web_search / x_* tools
+  // fine — tool-invoked — so fast parallel searchers work. The reasoning steps
+  // (plan/reflect/verify/synth) use grok-build for its 512K context.
   const researchModel = options.model ?? DEFAULT_FAST_MODEL;
-  const synthModel = options.model ?? DEFAULT_FRONTIER_MODEL;
+  const synthModel = options.model ?? DEFAULT_MODEL;
 
   print(`${dim("topic:")}  ${topic}`);
   print(`${dim("plan:")}   up to ${facets} parallel searchers${deep ? " · +reflection round" : ""}`);
@@ -161,7 +165,7 @@ function clamp(v: number | undefined, dflt: number, lo: number, hi: number): num
   return Math.min(hi, Math.max(lo, n));
 }
 
-// Cheap planner: split the topic into independent, parallelizable sub-questions.
+// Planner: split the topic into independent, parallelizable sub-questions.
 function planQuestions(
   topic: string,
   max: number,
@@ -183,8 +187,8 @@ function planQuestions(
 
   const res = spawnGrokHeadless(
     prompt,
-    // ponytail: frontier model — decomposition quality sets the ceiling for the whole run
-    ["-m", DEFAULT_FRONTIER_MODEL, ...READONLY_LOCK, "--output-format", "plain", ...leaderArgs],
+    // ponytail: default model (grok-build) — decomposition quality sets the ceiling for the whole run
+    ["-m", DEFAULT_MODEL, ...READONLY_LOCK, "--output-format", "plain", ...leaderArgs],
     env,
     grokBin,
     PLAN_TIMEOUT_MS
@@ -274,8 +278,8 @@ function reflect(
   ].join("\n");
   const res = spawnGrokHeadless(
     prompt,
-    // ponytail: frontier model — gap-finding decides what the second round even looks at
-    ["-m", DEFAULT_FRONTIER_MODEL, ...READONLY_LOCK, "--output-format", "plain", ...leaderArgs],
+    // ponytail: default model (grok-build) — gap-finding decides what the second round even looks at
+    ["-m", DEFAULT_MODEL, ...READONLY_LOCK, "--output-format", "plain", ...leaderArgs],
     env,
     grokBin,
     PLAN_TIMEOUT_MS

@@ -16,7 +16,7 @@ export type GgMode =
   | "research"
   | "swarm";
 
-export type ModelClass = "frontier" | "fast" | "standard";
+export type ModelClass = "default" | "fast" | "standard";
 
 export type SetupScope = "user" | "project";
 

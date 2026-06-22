@@ -107,7 +107,7 @@ GrokGoblin adds three things on top of grok:
 2. **Verified autonomous loops.** `ralph`, `quest`, `cruise`, `swarm`, and `hunt` re-invoke grok across turns. After each round the harness runs your build/tests itself — the loop only stops on a *verified* pass or the iteration cap.
 3. **grok's real strengths, wired up.** Live web/X grounding with citations, a 512K context window on `grok-build`, fast-model routing, and native cross-session memory — all on by default.
 
-It's **token-aware** by design: loops start on the fast model and only escalate to the frontier model when they stall, verification is a real command (≈0 model tokens), and budgets (`--max-iterations`, `--max-turns`, timeouts) stop a stuck run instead of burning tokens.
+It's **efficient** by design: loops start on the low-latency model (`grok-composer-2.5-fast`) and switch to the 512K-context model (`grok-build`) when they stall, verification is a real command (≈0 model tokens), and budgets (`--max-iterations`, `--max-turns`, timeouts) stop a stuck run instead of looping forever.
 
 ---
 
@@ -175,7 +175,7 @@ Each loops until completion is **verified** (or it hits the iteration cap). Tune
 goblin forage "best embedded KV stores for Rust in 2026"            # quick: plan → parallel search → report
 goblin forage "is HTMX still gaining traction" --deep --facets 6     # + a reflection round that chases gaps
 ```
-The lead splits your topic into independent sub-questions, runs one **separate** grok searcher per angle **in parallel** — each one not just snippet-skimming but `open_page`-ing 3–5+ full sources to pull exact figures, plus X/real-time search for community signal. In `--deep` mode it iterates: **reflect on the gaps → search again, up to 3 rounds**, then an **independent fact-checker** re-verifies the load-bearing claims against their sources (confirm / correct / drop). The synthesized report carries summary · key findings · **contrarian views & risks** · open questions · sources · a **rerun-inputs** block. Token-aware: searchers run on the fast model; the reasoning steps (planning, reflection, verification, synthesis) run on the frontier model. Hard read-only — it can touch the web and X, never your repo.
+The lead splits your topic into independent sub-questions, runs one **separate** grok searcher per angle **in parallel** — each one not just snippet-skimming but `open_page`-ing 3–5+ full sources to pull exact figures, plus X/real-time search for community signal. In `--deep` mode it iterates: **reflect on the gaps → search again, up to 3 rounds**, then an **independent fact-checker** re-verifies the load-bearing claims against their sources (confirm / correct / drop). The synthesized report carries summary · key findings · **contrarian views & risks** · open questions · sources · a **rerun-inputs** block. Searchers run on the fast model (`grok-composer-2.5-fast`) in parallel — it invokes the web/X search tools fine; the reasoning steps (planning, reflection, verification, synthesis) run on `grok-build` for its 512K context. Hard read-only — it can touch the web and X, never your repo.
 
 **Verified multi-goblin work:**
 ```bash
@@ -257,7 +257,7 @@ goblin ship --pr              # verify-gate → safe branch → style-matched co
 | `--max-iterations <n>` | Iteration cap (default 8). |
 | `--max-turns <n>` | Bound each iteration. |
 | `--best-of <n>` | Run each iteration N ways in parallel, keep the best. |
-| `--fast` / `--model <id>` | Pin a model (otherwise tiers fast → frontier on stall). |
+| `--fast` / `--model <id>` | Pin a model (otherwise starts on the fast model and switches to `grok-build` on stall). |
 | `--skip-git-repo-check` | Run outside a git repo. |
 
 </details>
@@ -276,8 +276,8 @@ goblin config model fast                  # switch to grok-composer-2.5-fast
 
 | Model | Role |
 |---|---|
-| `grok-build` | frontier / leader (default) — **512K** context |
-| `grok-composer-2.5-fast` | fast worker for cheap iterations |
+| `grok-build` | default / leader — **512K** context, native web/X search |
+| `grok-composer-2.5-fast` | fast model — low-latency, 200K context, tool-invoked web/X search |
 
 A new grok model id passes straight through — no allowlist gates execution, so the wrapper keeps working the day xAI ships a new model.
 

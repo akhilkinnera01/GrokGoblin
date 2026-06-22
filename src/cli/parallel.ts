@@ -30,7 +30,7 @@ const WORKER_TIMEOUT_MS = 15 * 60 * 1000;
 const WORKER_MAX_TURNS = 30;
 const PLAN_TIMEOUT_MS = 3 * 60 * 1000;
 
-// Ask a cheap planner to split the goal into independent, file-disjoint units.
+// Ask a planner to split the goal into independent, file-disjoint units.
 function planUnits(
   goal: string,
   grokHome: string,

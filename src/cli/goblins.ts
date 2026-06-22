@@ -4,7 +4,7 @@ import {
   resolveGrokHome,
   resolveGgStateDir,
   DEFAULT_FAST_MODEL,
-  DEFAULT_FRONTIER_MODEL,
+  DEFAULT_MODEL,
 } from "../utils/paths.js";
 import { AGENT_DEFINITIONS } from "../agents/definitions.js";
 import { buildRolePrompt } from "../config/subagents.js";
@@ -200,7 +200,7 @@ async function runGoblinsOnce(
 
   const roleNames = Object.keys(AGENT_DEFINITIONS);
   const grokHome = resolveGrokHome();
-  const leaderModel = (flags["model"] as string) ?? DEFAULT_FRONTIER_MODEL;
+  const leaderModel = (flags["model"] as string) ?? DEFAULT_MODEL;
 
   header("GrokGoblin Goblins (native subagents)");
   print(`${dim("task:")}    ${task}`);
