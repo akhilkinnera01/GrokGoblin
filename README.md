@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <a href="https://akhilkinnera01.github.io/GrokGoblin-Website/">Website</a> 
+  <a href="https://akhilkinnera01.github.io/GrokGoblin-Website/">Website</a> .
   <a href="#install">Install</a> ·
   <a href="#quickstart">Quickstart</a> ·
   <a href="#how-it-works">How it works</a> ·
