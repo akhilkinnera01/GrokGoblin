@@ -3,7 +3,7 @@ import {
   resolveGrokHome,
   resolveGrokConfigPath,
   KNOWN_MODELS,
-  DEFAULT_FRONTIER_MODEL,
+  DEFAULT_MODEL,
   DEFAULT_FAST_MODEL,
 } from "../utils/paths.js";
 import {
@@ -93,14 +93,15 @@ export async function runConfig(
   }
 
   if (sub === "model") {
-    // Shortcut: `goblin config model fast|frontier|<id>`
+    // Shortcut: `goblin config model default|fast|<id>`
     const choice = args[1];
     if (!choice) {
-      exitWithError(`usage: goblin config model <frontier|fast|${KNOWN_MODELS.join("|")}>`);
+      exitWithError(`usage: goblin config model <default|fast|${KNOWN_MODELS.join("|")}>`);
     }
     const model =
-      choice === "frontier"
-        ? DEFAULT_FRONTIER_MODEL
+      // "frontier" kept as a back-compat alias for "default"
+      choice === "default" || choice === "frontier"
+        ? DEFAULT_MODEL
         : choice === "fast"
           ? DEFAULT_FAST_MODEL
           : choice!;
@@ -113,6 +114,6 @@ export async function runConfig(
   }
 
   exitWithError(
-    `unknown config subcommand '${sub}'. Use: list | get <key> | set <key> <value> | model <frontier|fast>`
+    `unknown config subcommand '${sub}'. Use: list | get <key> | set <key> <value> | model <default|fast>`
   );
 }

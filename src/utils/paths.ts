@@ -8,10 +8,10 @@ import type { SetupScope } from "../types/index.js";
 export const GG_VERSION = "0.1.1";
 export const GG_STATE_DIR = ".grokgoblin";
 export const DEFAULT_GROK_HOME = join(homedir(), ".grok");
-export const DEFAULT_FRONTIER_MODEL = "grok-build";
+export const DEFAULT_MODEL = "grok-build";
 export const DEFAULT_FAST_MODEL = "grok-composer-2.5-fast";
 // Models exposed by the grok CLI (grok 0.2.x). Used to validate `goblin config model`.
-export const KNOWN_MODELS = [DEFAULT_FRONTIER_MODEL, DEFAULT_FAST_MODEL];
+export const KNOWN_MODELS = [DEFAULT_MODEL, DEFAULT_FAST_MODEL];
 
 // The canonical set of skills GrokGoblin installs. Used both to install them and
 // to filter "goblin skills list" so it shows GrokGoblin's own skills, not every

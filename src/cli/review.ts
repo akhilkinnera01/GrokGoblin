@@ -7,7 +7,7 @@ import {
   commandExists,
   spawnGrokHeadlessAsync,
 } from "../utils/exec.js";
-import { resolveGrokHome, DEFAULT_FRONTIER_MODEL } from "../utils/paths.js";
+import { resolveGrokHome, DEFAULT_MODEL } from "../utils/paths.js";
 import { leaderSocketArgs } from "../utils/leader.js";
 import { print, header, ok, warn, info, step, dim, bold, exitWithError } from "../utils/print.js";
 
@@ -182,10 +182,10 @@ export async function runReview(
   if (guidelines) print(dim("        following repo review guidelines"));
   print("");
   step("Running two independent review lanes...");
-  print(dim("  (two frontier reviewers in parallel — typically 1–3 min; sit tight)"));
+  print(dim("  (two independent reviewers in parallel — typically 1–3 min; sit tight)"));
 
   const baseArgs = [
-    "-m", DEFAULT_FRONTIER_MODEL,
+    "-m", DEFAULT_MODEL,
     "--always-approve",
     "--max-turns", String(LANE_MAX_TURNS),
     "--output-format", "plain",

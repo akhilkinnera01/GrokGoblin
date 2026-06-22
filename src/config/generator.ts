@@ -5,7 +5,7 @@ import {
   resolveGrokConfigPath,
   resolveHooksDir,
   resolveSkillsDir,
-  DEFAULT_FRONTIER_MODEL,
+  DEFAULT_MODEL,
 } from "../utils/paths.js";
 
 const GG_AGENTS_MD_START = "<!-- GROKGOBLIN:AGENTS:START -->";
@@ -52,7 +52,7 @@ export function ensureGrokConfigDefaults(grokHome: string): void {
   const updates: Record<string, unknown> = {};
 
   if (!config.models?.default) {
-    updates.models = { default: DEFAULT_FRONTIER_MODEL };
+    updates.models = { default: DEFAULT_MODEL };
   }
   if (config.session?.auto_compact_threshold_percent === undefined) {
     updates.session = { auto_compact_threshold_percent: 85 };

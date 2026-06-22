@@ -3,7 +3,7 @@ import { join, dirname } from "path";
 import {
   resolveGrokHome,
   DEFAULT_FAST_MODEL,
-  DEFAULT_FRONTIER_MODEL,
+  DEFAULT_MODEL,
   resolveProjectMemoryPath,
 } from "../utils/paths.js";
 import { isGitRepo, gitRepoRoot, spawnGrokHeadless } from "../utils/exec.js";
@@ -314,10 +314,10 @@ async function runLoop(
     Number.isFinite(options.bestOf) && (options.bestOf as number) > 1
       ? Math.floor(options.bestOf as number)
       : undefined;
-  // Model tiering: an explicit --model (or --fast) pins the model and disables
-  // escalation. Otherwise the loop is cost-tiered — it starts on the cheap/fast
-  // model and only escalates to the frontier model when it gets stuck, which is
-  // the main token win over running every iteration on the frontier model.
+  // Model routing: an explicit --model (or --fast) pins the model and disables
+  // escalation. Otherwise the loop starts on the low-latency model (composer-2.5-fast)
+  // and switches to the 512K-context model (grok-build) when it gets stuck — the
+  // larger context + web/X search give a stalled loop more room to recover.
   const pinnedModel = options.model ?? (options.fast ? DEFAULT_FAST_MODEL : undefined);
   const tieringEnabled = !pinnedModel;
   let currentModel = pinnedModel ?? DEFAULT_FAST_MODEL;
@@ -349,7 +349,7 @@ async function runLoop(
     `${dim("model:")}  ${
       pinnedModel
         ? pinnedModel
-        : `${currentModel} → ${DEFAULT_FRONTIER_MODEL} on stall (tiered)`
+        : `${currentModel} → ${DEFAULT_MODEL} on stall (tiered)`
     }`
   );
   print(`${dim("verify:")} ${verifyCommand ?? "independent QC reviewer (no test command found)"}`);
@@ -532,11 +532,11 @@ async function runLoop(
   // Escalate the maker model on stall, or abort if already escalated. Returns
   // "abort" when the loop should stop (state is preserved on disk for resume).
   function stallAction(): "escalate" | "abort" {
-    if (tieringEnabled && !escalated && currentModel !== DEFAULT_FRONTIER_MODEL) {
-      currentModel = DEFAULT_FRONTIER_MODEL;
+    if (tieringEnabled && !escalated && currentModel !== DEFAULT_MODEL) {
+      currentModel = DEFAULT_MODEL;
       escalated = true;
       stuckRounds = 0;
-      warn(`No progress — escalating maker to ${DEFAULT_FRONTIER_MODEL}.`);
+      warn(`No progress — escalating maker to ${DEFAULT_MODEL}.`);
       return "escalate";
     }
     // Relentless mode: never give up early — keep grinding until completion or the
