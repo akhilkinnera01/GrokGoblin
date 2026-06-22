@@ -17,7 +17,11 @@
 </p>
 
 <p align="center">
-  <a href="https://akhilkinnera01.github.io/GrokGoblin-Website/">Website</a> .
+  <a href="https://akhilkinnera01.github.io/GrokGoblin-Website/"><img alt="Visit the GrokGoblin website" src="https://img.shields.io/badge/🌐_Visit_the_Website-70f255?style=for-the-badge&labelColor=060806"></a>
+</p>
+
+<p align="center">
+  <a href="https://akhilkinnera01.github.io/GrokGoblin-Website/"><b>Website</b></a> ·
   <a href="#install">Install</a> ·
   <a href="#quickstart">Quickstart</a> ·
   <a href="#how-it-works">How it works</a> ·
